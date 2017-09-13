@@ -2,11 +2,10 @@ module Main where
 
 import GP (myFitness, eval)
 import GenProg
-import Control.Monad.Random (mkStdGen, evalRand)
+import Control.Monad.Random (mkStdGen, evalRand, getStdGen)
 import Data.Maybe (fromMaybe)
 import Text.Printf (printf)
 import Data.List (intercalate)
-import Control.Monad.Random (getStdGen)
 
 main :: IO ()
 main = do
