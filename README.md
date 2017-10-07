@@ -9,7 +9,7 @@ Project setup
 -------------
 
  * The project is [built with Stack](stack.yaml) and based on an LTS Stackage.
- * Currently, a static copy of `genprog` is included in [`lib/`](lib/) for ease of building (and exploration locally, to be honest). It's on Hackage, [but not Stackage](https://github.com/jsnajder/genprog/issues/2) which would make this codebase smaller, more standard and easy to upgrade.
+ * Currently, a static copy of `genprog` is included in [`lib/`](lib/) for ease of building (and exploration locally, to be honest). It's on Hackage, [but not Stackage](https://github.com/jsnajder/genprog/issues/2) which would make this codebase smaller, more standard and easy to upgrade (doesn't construct a build plan currently).
 
 ### Building
 

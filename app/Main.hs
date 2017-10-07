@@ -7,8 +7,11 @@ import Data.Maybe (fromMaybe)
 import Text.Printf (printf)
 import Data.List (intercalate)
 
-main :: IO ()
-main = do
+import OhHell
+import Control.Monad.State (StateT, execStateT)
+
+evolveMain :: IO ()
+evolveMain = do
   let target = 12345
   printf "Evolving expressions that result in something near %d...\n" target
   let params = defaultEvolParams {fitness = myFitness target}
@@ -19,3 +22,13 @@ main = do
   let result = cachedBest $ last trace
   let prettyExpr = show (unInd result)
   printf "Evaluates to: %s using %s.\n" (maybe "??" show (eval $ unInd result)) prettyExpr
+
+type MyState = StateT GameState IO ()
+
+main :: IO ()
+main = do
+  print deck
+  let alice = Player 1 "Alice"
+  let scores = [RoundResult [(alice, HandResult 1 2)]]
+  results <- execStateT playGame scores
+  print results

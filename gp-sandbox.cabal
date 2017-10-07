@@ -15,9 +15,12 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     GP
+  exposed-modules:     GP, OhHell
   build-depends:       base >= 4.7 && < 5
+                     , containers
+                     , mtl
                      , genprog > 0.1
+                     , general-games
                      , syb == 0.7.*, syz
                      , MonadRandom == 0.5.*
   default-language:    Haskell2010
@@ -28,6 +31,8 @@ executable gp-sandbox
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , gp-sandbox
+                     , mtl
+                     , general-games
                      , genprog > 0.1
                      , MonadRandom == 0.5.*
   default-language:    Haskell2010
@@ -35,6 +40,7 @@ executable gp-sandbox
 test-suite gp-sandbox-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
+  other-modules:       GameSpec
   main-is:             Spec.hs
   build-depends:       base
                      , gp-sandbox
