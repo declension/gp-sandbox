@@ -29,6 +29,6 @@ main :: IO ()
 main = do
   print deck
   let alice = Player 1 "Alice"
-  let scores = [RoundResult [(alice, HandResult 1 2)]]
-  results <- execStateT playGame scores
+  let scores = [RoundResult [(alice, PlayerRoundResult 1 2)]]
+  results <- execStateT playRound scores
   print results

@@ -1,14 +1,12 @@
-
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module OhHell where
 
-import Prelude (($), (.), Show, Eq, show, flip, String, Int, putStrLn, show)
+import ClassyPrelude
+
 import GHC.IO (IO(IO))
 --import Data.List.NonEmpty
-import Data.List (intercalate)
-import Data.Monoid ((<>))
-import Data.Functor ((<$>))
-import Data.Set
+import qualified Data.Set as Set
 import Game.Implement.Card (Card, OrderedCard, fullDeck, sortCardsBy)
 import Game.Implement.Card.Standard.Poker (Order(AceHighRankOrder))
 import Game.Implement.Card.Standard
@@ -26,28 +24,34 @@ newtype Hand = Hand (Set PlayingCard)
 infix 8 ##
 
 -- Make showing Hands prettier
-instance Prelude.Show Hand where
+instance Show Hand where
   show (Hand cards) = "{" <> intercalate ", " cardList <> "}"
     where cardList = show <$> toList cards
 
 handOf :: [PlayingCard] -> Hand
-handOf lst = Hand $ fromList lst
+handOf lst = Hand $ Set.fromList lst
 
 
 data Player = Player {playerId :: Int, playerName :: String} deriving (Eq)
 instance Show Player where
   show (Player pid name) = printf "%s <#%d>" name pid
 
-data HandResult = HandResult {handBid :: Int, handTaken :: Int} deriving (Eq)
-instance Show HandResult where
-  show (HandResult bid taken) = printf "{bid:%d, got:%d}" bid taken
-newtype RoundResult = RoundResult [(Player, HandResult)] deriving (Show, Eq)
+data PlayerRoundResult = PlayerRoundResult {handBid :: Int, handTaken :: Int} deriving (Eq)
+instance Show PlayerRoundResult where
+  show (PlayerRoundResult bid taken) = printf "{bid:%d, got:%d}" bid taken
+newtype RoundResult = RoundResult [(Player, PlayerRoundResult)] deriving (Show, Eq)
 type Scores = [RoundResult]
 
 type GameState = Scores
 
 
-playGame :: StateT GameState IO ()
-playGame = do
+playRound :: StateT GameState IO ()
+playRound = do
   scores <- get
-  lift $ putStrLn "Got something"
+  let n = length scores
+  lift $ printf "On round #%d.\n" n
+
+scoreForPlayerRound :: PlayerRoundResult -> Int
+scoreForPlayerRound (PlayerRoundResult bid taken)
+ | bid == taken = 10 + bid * bid
+ | otherwise = -1 * abs (bid - taken)

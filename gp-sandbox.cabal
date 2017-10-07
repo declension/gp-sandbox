@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     GP, OhHell
   build-depends:       base >= 4.7 && < 5
+                     , classy-prelude
                      , containers
                      , mtl
                      , genprog > 0.1
@@ -31,6 +32,7 @@ executable gp-sandbox
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , gp-sandbox
+                     , classy-prelude
                      , mtl
                      , general-games
                      , genprog > 0.1

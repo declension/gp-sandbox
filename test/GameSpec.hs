@@ -22,6 +22,6 @@ basicSpec = describe "The Game Engine" $ do
     show alice `shouldContain` "1"
 
   it "constructs HandResults " $ do
-    let handResult = HandResult 1 2
+    let handResult = PlayerRoundResult 1 2
     handBid handResult `shouldBe` 1
     handTaken handResult `shouldBe` 2
