@@ -2,18 +2,23 @@
 
 module OhHell where
 
-import ClassyPrelude
-import GHC.IO (IO(IO))
-
+import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty as NonEmpty
 import qualified Data.Set as Set
 import Game.Implement.Card (Card, OrderedCard, fullDeck, sortCardsBy)
 import Game.Implement.Card.Standard.Poker (Order(AceHighRankOrder))
 import Game.Implement.Card.Standard
 import Control.Monad.State (StateT, get, put, modify, lift)
 import Text.Printf (printf)
+import Data.Set (Set)
+import Data.Semigroup ((<>))
 
-deck :: NonNull [PlayingCard]
-deck = impureNonNull $ sortCardsBy AceHighRankOrder fullDeck
+--import qualified Prelude
+--import Prelude (Int, Show, Eq, Ord, String, show, ($), (.), (<$>), fmap, otherwise, sum, (==), (+), (*), (-), (abs))
+import ClassyPrelude hiding (fromList)
+
+deck :: NonEmpty PlayingCard
+deck = fromList $ sortCardsBy AceHighRankOrder fullDeck
 
 newtype Hand = Hand (Set PlayingCard)
   deriving (Eq)
@@ -25,7 +30,7 @@ infix 8 ##
 -- Make showing Hands prettier
 instance Show Hand where
   show (Hand cards) = "{" <> intercalate ", " cardList <> "}"
-    where cardList = show <$> toList cards
+    where cardList = show <$> Set.toList cards
 
 handOf :: [PlayingCard] -> Hand
 handOf lst = Hand $ Set.fromList lst
@@ -41,8 +46,8 @@ instance Show PlayerRoundResult where
   show (PlayerRoundResult bid taken) = printf "{bid:%d, got:%d}" bid taken
 
 -- The results round-by-round, broken down by player
-type Results = NonNull [(Player, [PlayerRoundResult])]
-type Scores = NonNull [(Player, Score)]
+type Results = NonEmpty (Player, [PlayerRoundResult])
+type Scores = NonEmpty (Player, Score)
 
 -- Some aliases for readability
 type Bid   = Int
@@ -69,8 +74,7 @@ scoresFor :: ScorerRules a =>
       a ->
       Results ->
       Scores
--- whyyyyyyyyyyyyyyy?
-scoresFor rules results = impureNonNull $ second (totalScore rules) <$> toNullable results
+scoresFor rules results = second (totalScore rules) <$> results
 
 
 -- This can definitely be empty
@@ -87,15 +91,15 @@ class DealerRules dr where
 
 -- Choose a bid for the given hand.
 -- 'options' is the bids available, as determined by the rule system
-chooseBid :: Results -> Hand -> NonNull [Bid] -> Bid
-chooseBid results hand = head
+chooseBid :: Results -> Hand -> NonEmpty Bid -> Bid
+chooseBid results hand = NonEmpty.head
 
 
 -- Play a round of the game
 playRound :: ScorerRules s => s -> StateT GameState IO ()
 playRound scorerRules = do
   (scores, roundNum) <- get
-  let numPlayers = length scores
-  lift $ printf "On round #%d with %d players.\n" (length $ snd $ head scores) numPlayers
+  let numPlayers = NonEmpty.length scores
+  lift $ printf "On round #%d with %d players.\n" (ClassyPrelude.length $ snd $ NonEmpty.head scores) numPlayers
   put (scores, roundNum + 1)
 

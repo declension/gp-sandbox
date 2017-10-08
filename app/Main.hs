@@ -1,13 +1,18 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 module Main where
 
 import GP (myFitness, eval)
 import GenProg
 import Control.Monad.Random (mkStdGen, evalRand, getStdGen)
 import Text.Printf (printf)
-import Data.List (intercalate)
+
+import Data.List.NonEmpty as NonEmpty (fromList)
 
 import OhHell
 import Control.Monad.State (StateT, execStateT)
+import ClassyPrelude hiding (last)
+import Data.List (last)
 
 evolveMain :: IO ()
 evolveMain = do
@@ -32,11 +37,11 @@ main = do
   let charlie = Player 3 "Charlie"
   let prr = PlayerRoundResult
   return ()
---  let results = nonEmpty [(alice,   [prr 0 0, prr 1 0, prr 1 1, prr 3 3]),
---                          (bob,     [prr 0 1, prr 0 1, prr 1 0, prr 0 0]),
---                          (charlie, [prr 0 1, prr 0 0, prr 1 1, prr 0 1])]
---  let scoringRules = ProgressiveScoring 10 (-1)
---  print $ scoresFor scoringRules results
---  (finalResults, roundNum) <- execStateT (playRound scoringRules) (results, 1)
---  print finalResults
---  printf "Finished at %d\n" roundNum
+  let results = NonEmpty.fromList [(alice,   [prr 0 0, prr 1 0, prr 1 1, prr 3 3]),
+                                   (bob,     [prr 0 1, prr 0 1, prr 1 0, prr 0 0]),
+                                   (charlie, [prr 0 1, prr 0 0, prr 1 1, prr 0 1])]
+  let scoringRules = ProgressiveScoring 10 (-1)
+  print $ scoresFor scoringRules results
+  (finalResults, roundNum) <- execStateT (playRound scoringRules) (results, 1)
+  print finalResults
+  printf "Finished at round #%d\n" roundNum

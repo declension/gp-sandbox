@@ -16,7 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     GP, OhHell
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base >= 4.9 && < 5
                      , classy-prelude
                      , containers > 0.5
                      , mtl
@@ -30,7 +30,7 @@ executable gp-sandbox
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
-  build-depends:       base
+  build-depends:       base > 4.9
                      , gp-sandbox
                      , classy-prelude
                      , mtl
@@ -44,7 +44,7 @@ test-suite gp-sandbox-test
   hs-source-dirs:      test
   other-modules:       GameSpec
   main-is:             Spec.hs
-  build-depends:       base
+  build-depends:       base > 4.9
                      , gp-sandbox
                      , classy-prelude
                      , containers > 0.5
