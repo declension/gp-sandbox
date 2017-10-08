@@ -57,7 +57,7 @@ type RoundNum = Int
 type NumCards = Int
 
 -- The state we need to track throughout the game
-type GameState = (Results, RoundNum)
+type GameState = Results
 
 
 class ScorerRules a where
@@ -98,8 +98,9 @@ chooseBid results hand = NonEmpty.head
 -- Play a round of the game
 playRound :: ScorerRules s => s -> StateT GameState IO ()
 playRound scorerRules = do
-  (scores, roundNum) <- get
-  let numPlayers = NonEmpty.length scores
-  lift $ printf "On round #%d with %d players.\n" (ClassyPrelude.length $ snd $ NonEmpty.head scores) numPlayers
-  put (scores, roundNum + 1)
+  results <- get
+  let numPlayers = NonEmpty.length results
+  lift $ printf "On round #%d with %d players.\n" (ClassyPrelude.length $ snd $ NonEmpty.head results) numPlayers
+  let results' = second (++ [PlayerRoundResult 1 1]) <$> results
+  put results'
 

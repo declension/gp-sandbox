@@ -42,6 +42,5 @@ main = do
                                    (charlie, [prr 0 1, prr 0 0, prr 1 1, prr 0 1])]
   let scoringRules = ProgressiveScoring 10 (-1)
   print $ scoresFor scoringRules results
-  (finalResults, roundNum) <- execStateT (playRound scoringRules) (results, 1)
+  finalResults <- execStateT (playRound scoringRules) results
   print finalResults
-  printf "Finished at round #%d\n" roundNum
