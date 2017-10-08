@@ -4,6 +4,8 @@ module OhHell where
 
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty as NonEmpty
+import qualified Data.Map as Map (fromList)
+import Data.Map ((!), Map)
 import qualified Data.Set as Set
 import Game.Implement.Card (Card, OrderedCard, fullDeck, sortCardsBy)
 import Game.Implement.Card.Standard.Poker (Order(AceHighRankOrder))
@@ -48,6 +50,7 @@ instance Show PlayerRoundResult where
 -- The results round-by-round, broken down by player
 type Results = NonEmpty (Player, [PlayerRoundResult])
 type Scores = NonEmpty (Player, Score)
+type RoundResults = Map Player PlayerRoundResult
 
 -- Some aliases for readability
 type Bid   = Int
@@ -99,8 +102,16 @@ chooseBid results hand = NonEmpty.head
 playRound :: ScorerRules s => s -> StateT GameState IO ()
 playRound scorerRules = do
   results <- get
+  let players = NonEmpty.map fst results
   let numPlayers = NonEmpty.length results
   lift $ printf "On round #%d with %d players.\n" (ClassyPrelude.length $ snd $ NonEmpty.head results) numPlayers
-  let results' = second (++ [PlayerRoundResult 1 1]) <$> results
+
+  let roundResults = fakeResultsFor players
+  let results' = updatePlayer <$> results
+        where updatePlayer (p, history) = (p, roundResults ! p : history)
   put results'
 
+
+fakeResultsFor :: NonEmpty Player -> RoundResults
+fakeResultsFor players = Map.fromList . NonEmpty.toList $ NonEmpty.zip players fakeResults
+  where fakeResults = NonEmpty.repeat $ PlayerRoundResult 99 99
