@@ -3,7 +3,6 @@ module Main where
 import GP (myFitness, eval)
 import GenProg
 import Control.Monad.Random (mkStdGen, evalRand, getStdGen)
-import Data.Maybe (fromMaybe)
 import Text.Printf (printf)
 import Data.List (intercalate)
 
@@ -29,6 +28,15 @@ main :: IO ()
 main = do
   print deck
   let alice = Player 1 "Alice"
-  let scores = [RoundResult [(alice, PlayerRoundResult 1 2)]]
-  results <- execStateT playRound scores
-  print results
+  let bob = Player 2 "Bob"
+  let charlie = Player 3 "Charlie"
+  let prr = PlayerRoundResult
+  return ()
+--  let results = nonEmpty [(alice,   [prr 0 0, prr 1 0, prr 1 1, prr 3 3]),
+--                          (bob,     [prr 0 1, prr 0 1, prr 1 0, prr 0 0]),
+--                          (charlie, [prr 0 1, prr 0 0, prr 1 1, prr 0 1])]
+--  let scoringRules = ProgressiveScoring 10 (-1)
+--  print $ scoresFor scoringRules results
+--  (finalResults, roundNum) <- execStateT (playRound scoringRules) (results, 1)
+--  print finalResults
+--  printf "Finished at %d\n" roundNum
