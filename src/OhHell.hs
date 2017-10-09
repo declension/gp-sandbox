@@ -1,6 +1,8 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module OhHell where
+import qualified Data.List as List (length, (!!), reverse)
+import ClassyPrelude hiding (fromList)
 
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty as NonEmpty
@@ -15,9 +17,8 @@ import Text.Printf (printf)
 import Data.Set (Set)
 import Data.Semigroup ((<>))
 
---import qualified Prelude
+len = List.length
 --import Prelude (Int, Show, Eq, Ord, String, show, ($), (.), (<$>), fmap, otherwise, sum, (==), (+), (*), (-), (abs))
-import ClassyPrelude hiding (fromList)
 
 deck :: NonEmpty PlayingCard
 deck = fromList $ sortCardsBy AceHighRankOrder fullDeck
@@ -88,9 +89,23 @@ totalScore rules = sum . fmap (scoreForPlayerRound rules)
 -- Notably: 1. Number of cards dealt per round
 --          2. What constitutes a valid bid for a player on a round (e.g. bid-busting)
 class DealerRules dr where
-  numCards :: dr -> RoundNum -> NumCards
-  validBids :: dr -> [Player] -> RoundNum -> Player -> [Bid]
+  numCardsForRound :: dr -> RoundNum -> NumCards
+  bidBusting :: dr -> Bool
+  validBids :: dr -> NonEmpty Player -> RoundNum -> Player -> Set Bid
+  validBids rules players roundNum player
+    | bidBusting rules && player == NonEmpty.last players = bids
+    | otherwise = bids
+    where bids = Set.fromList [1..(numCardsForRound rules roundNum)]
+          numPlayers = NonEmpty.length players
 
+data RikikiDealing = RikikiDealing {numPlayers :: Int}
+
+instance DealerRules RikikiDealing where
+  numCardsForRound dr roundNum = (up ++ maxRoundSize : down) List.!! (roundNum - 1)
+                    where maxRoundSize = 51 `div` numPlayers dr
+                          up = [1..maxRoundSize-1]
+                          down = List.reverse up
+  bidBusting dr = True
 
 -- Choose a bid for the given hand.
 -- 'options' is the bids available, as determined by the rule system
@@ -99,18 +114,23 @@ chooseBid results hand = NonEmpty.head
 
 
 -- Play a round of the game
-playRound :: ScorerRules s => s -> StateT GameState IO ()
-playRound scorerRules = do
+playRound :: (DealerRules dr, ScorerRules sr) => dr -> sr -> StateT GameState IO ()
+playRound dealerRules scorerRules = do
   results <- get
   let players = NonEmpty.map fst results
   let numPlayers = NonEmpty.length results
-  lift $ printf "On round #%d with %d players.\n" (ClassyPrelude.length $ snd $ NonEmpty.head results) numPlayers
+  lift $ printf "On round #%d with %d players.\n" (len . snd . NonEmpty.head $ results) numPlayers
+
+  -- bid
+  let roundNo = ((+1) . len . snd . NonEmpty.head) results
+  let cardsThisRound = numCardsForRound dealerRules cardsThisRound
+  lift $ printf "Dealing %d card(s)...\n" cardsThisRound
 
   let roundResults = fakeResultsFor players
+
   let results' = updatePlayer <$> results
         where updatePlayer (p, history) = (p, roundResults ! p : history)
   put results'
-
 
 fakeResultsFor :: NonEmpty Player -> RoundResults
 fakeResultsFor players = Map.fromList . NonEmpty.toList $ NonEmpty.zip players fakeResults

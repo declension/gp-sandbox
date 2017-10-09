@@ -41,6 +41,7 @@ main = do
                                    (bob,     [prr 0 1, prr 0 1, prr 1 0, prr 0 0]),
                                    (charlie, [prr 0 1, prr 0 0, prr 1 1, prr 0 1])]
   let scoringRules = ProgressiveScoring 10 (-1)
+  let dealingRules = RikikiDealing {numPlayers=3}
   print $ scoresFor scoringRules results
-  finalResults <- execStateT (playRound scoringRules) results
+  finalResults <- execStateT (playRound dealingRules scoringRules) results
   print finalResults

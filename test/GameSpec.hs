@@ -5,7 +5,9 @@ import OhHell
 import qualified Data.List.NonEmpty as NonEmpty (fromList)
 
 spec :: Spec
-spec = basicSpec
+spec = do
+  basicSpec
+  scoringSpec
 
 alice = Player 1 "Alice"
 bob = Player 2 "Bob"
@@ -14,24 +16,36 @@ prr = PlayerRoundResult
 
 
 basicSpec :: Spec
-basicSpec = describe "The game engine" $ do
+basicSpec =
+  describe "The game engine" $ do
 
-  it "constructs players properly" $ do
-    playerName charlie `shouldBe` "Charlie"
+    it "constructs players properly" $ do
+      playerName charlie `shouldBe` "Charlie"
 
-  it "shows players nicely" $ do
-    show alice `shouldContain` "Alice"
-    show alice `shouldContain` "1"
+    it "shows players nicely" $ do
+      show alice `shouldContain` "Alice"
+      show alice `shouldContain` "1"
 
-  it "constructs HandResults " $ do
-    let handResult = PlayerRoundResult 1 2
-    handBid handResult `shouldBe` 1
-    handTaken handResult `shouldBe` 2
+    it "constructs HandResults " $ do
+      let handResult = PlayerRoundResult 1 2
+      handBid handResult `shouldBe` 1
+      handTaken handResult `shouldBe` 2
 
-  it "sums scores correctly for Progressive Scoring" $ do
-    -- A combination of scores that should show everything
-    let results = NonEmpty.fromList [(alice,   [prr 0 0, prr 1 0, prr 1 1, prr 3 3]),
-                                     (bob,     [prr 0 1, prr 0 1, prr 1 0, prr 0 0]),
-                                     (charlie, [prr 0 1, prr 0 0, prr 1 1, prr 0 2])]
-    let rules = ProgressiveScoring 10 (-1)
-    scoresFor rules results `shouldBe` NonEmpty.fromList [(alice, 39), (bob, 7), (charlie, 18)]
+    it "sums scores correctly for Progressive Scoring" $ do
+      -- A combination of scores that should show everything
+      let results = NonEmpty.fromList [(alice,   [prr 0 0, prr 1 0, prr 1 1, prr 3 3]),
+                                       (bob,     [prr 0 1, prr 0 1, prr 1 0, prr 0 0]),
+                                       (charlie, [prr 0 1, prr 0 0, prr 1 1, prr 0 2])]
+      let rules = ProgressiveScoring 10 (-1)
+      scoresFor rules results `shouldBe` NonEmpty.fromList [(alice, 39), (bob, 7), (charlie, 18)]
+
+scoringSpec :: Spec
+scoringSpec = describe "Rikiki Dealing" $ do
+
+    it "deals correctly" $ do
+      let dealer = RikikiDealing 5
+      numCardsForRound dealer 1 `shouldBe` 1
+      numCardsForRound dealer 2 `shouldBe` 2
+      numCardsForRound dealer 5 `shouldBe` 5
+      numCardsForRound dealer 10 `shouldBe` 10
+      numCardsForRound dealer 11 `shouldBe` 9
