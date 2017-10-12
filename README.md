@@ -1,5 +1,6 @@
 Genetic Programming sandbox
 ===========================
+[![Build Status](https://travis-ci.org/declension/gp-sandbox.svg?branch=master)](https://travis-ci.org/declension/gp-sandbox)
 
 Small experiments with Genetic Programming using the [GenProg](http://hackage.haskell.org/package/genprog) library.
 
