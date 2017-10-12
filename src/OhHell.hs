@@ -1,7 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module OhHell where
-import qualified Data.List as List (length, (!!), reverse)
+import qualified Data.List as List (length, (!!), reverse, repeat)
 import ClassyPrelude hiding (fromList)
 
 import Data.List.NonEmpty (NonEmpty)
@@ -101,10 +101,11 @@ class DealerRules dr where
 data RikikiDealing = RikikiDealing {numPlayers :: Int}
 
 instance DealerRules RikikiDealing where
-  numCardsForRound dr roundNum = (up ++ maxRoundSize : down) List.!! (roundNum - 1)
+  numCardsForRound dr roundNum = (up ++ maxRoundSize : down ++ zeros) List.!! (roundNum - 1)
                     where maxRoundSize = 51 `div` numPlayers dr
                           up = [1..maxRoundSize-1]
                           down = List.reverse up
+                          zeros = List.repeat 0
   bidBusting dr = True
 
 -- Choose a bid for the given hand.
@@ -114,23 +115,23 @@ chooseBid results hand = NonEmpty.head
 
 
 -- Play a round of the game
-playRound :: (DealerRules dr, ScorerRules sr) => dr -> sr -> StateT GameState IO ()
-playRound dealerRules scorerRules = do
+playGame :: (DealerRules dr, ScorerRules sr) => dr -> sr -> StateT GameState IO ()
+playGame dealerRules scorerRules = do
   results <- get
-  let players = NonEmpty.map fst results
-  let numPlayers = NonEmpty.length results
-  lift $ printf "On round #%d with %d players.\n" (len . snd . NonEmpty.head $ results) numPlayers
-
-  -- bid
   let roundNo = ((+1) . len . snd . NonEmpty.head) results
-  let cardsThisRound = numCardsForRound dealerRules cardsThisRound
-  lift $ printf "Dealing %d card(s)...\n" cardsThisRound
+  let cardsThisRound = numCardsForRound dealerRules roundNo
+  if cardsThisRound == 0 then return () else do
+    let players = NonEmpty.map fst results
+    let numPlayers = NonEmpty.length results
+    lift $ printf "On round #%02d (with %d players)\n" roundNo numPlayers
 
-  let roundResults = fakeResultsFor players
-
-  let results' = updatePlayer <$> results
-        where updatePlayer (p, history) = (p, roundResults ! p : history)
-  put results'
+    -- bid
+    lift $ printf "Dealing %d card(s)...\n" cardsThisRound
+    let roundResults = fakeResultsFor players
+    let results' = updatePlayer <$> results
+          where updatePlayer (p, history) = (p, roundResults ! p : history)
+    put results'
+    playGame dealerRules scorerRules
 
 fakeResultsFor :: NonEmpty Player -> RoundResults
 fakeResultsFor players = Map.fromList . NonEmpty.toList $ NonEmpty.zip players fakeResults
