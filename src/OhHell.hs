@@ -1,7 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module OhHell where
-import qualified Data.List as List (length, (!!), reverse, repeat)
+import qualified Data.List as List
 import ClassyPrelude hiding (fromList)
 
 import Data.List.NonEmpty (NonEmpty)
@@ -59,6 +59,7 @@ type Taken = Int
 type Score = Int
 type RoundNum = Int
 type NumCards = Int
+type NumPlayers = Int
 
 -- The state we need to track throughout the game
 type GameState = Results
@@ -89,18 +90,24 @@ totalScore rules = sum . fmap (scoreForPlayerRound rules)
 -- Notably: 1. Number of cards dealt per round
 --          2. What constitutes a valid bid for a player on a round (e.g. bid-busting)
 class DealerRules dr where
+  numPlayers :: dr -> NumPlayers
   numCardsForRound :: dr -> RoundNum -> NumCards
-  bidBusting :: dr -> Bool
-  validBids :: dr -> NonEmpty Player -> RoundNum -> Player -> Set Bid
-  validBids rules players roundNum player
-    | bidBusting rules && player == NonEmpty.last players = bids
-    | otherwise = bids
-    where bids = Set.fromList [1..(numCardsForRound rules roundNum)]
-          numPlayers = NonEmpty.length players
 
-data RikikiDealing = RikikiDealing {numPlayers :: Int}
+  -- Is bid-busting (last bidder can't allow a total bid equal to hand size) enabled?
+  bidBusting :: dr -> Bool
+
+  -- What are all the valid bids given the previous bids
+  validBids :: dr -> NumCards -> [(Player, Bid)] -> Set Bid
+  validBids rules numCards bids
+    | bidBusting rules && len bids == (numPlayers rules - 1) =  Set.difference allBids disallowed
+    | otherwise = allBids
+    where allBids = Set.fromList [0..numCards]
+          disallowed = Set.singleton $ sum (List.map snd bids)
+
+data RikikiDealing = RikikiDealingFor Int
 
 instance DealerRules RikikiDealing where
+  numPlayers (RikikiDealingFor n) = n
   numCardsForRound dr roundNum = (up ++ maxRoundSize : down ++ zeros) List.!! (roundNum - 1)
                     where maxRoundSize = 51 `div` numPlayers dr
                           up = [1..maxRoundSize-1]
@@ -123,10 +130,13 @@ playGame dealerRules scorerRules = do
   if cardsThisRound == 0 then return () else do
     let players = NonEmpty.map fst results
     let numPlayers = NonEmpty.length results
-    lift $ printf "On round #%02d (with %d players)\n" roundNo numPlayers
+    lift $ printf "--- round #%02d (with %d players) ---\n" roundNo numPlayers
 
     -- bid
     lift $ printf "Dealing %d card(s)...\n" cardsThisRound
+    let possibles = validBidsFor [(NonEmpty.head players, 0)]
+                    where validBidsFor = validBids dealerRules cardsThisRound
+    print $ Set.toList possibles
     let roundResults = fakeResultsFor players
     let results' = updatePlayer <$> results
           where updatePlayer (p, history) = (p, roundResults ! p : history)
