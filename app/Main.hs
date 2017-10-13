@@ -43,6 +43,6 @@ main = do
   print deck
   let results = fakeResults
   let scoringRules = ProgressiveScoring 10 (-1)
-  let dealingRules = RikikiDealingFor 0
+  let dealingRules = RikikiDealingFor (NonEmpty.length fakeResults)
   finalResults <- execStateT (playGame dealingRules scoringRules) results
   print finalResults
