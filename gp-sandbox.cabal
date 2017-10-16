@@ -33,7 +33,7 @@ executable gp-sandbox
   build-depends:       base > 4.9
                      , gp-sandbox
                      , classy-prelude
-                     , mtl
+                     , mtl > 2.2
                      , general-games
                      , genprog > 0.1
                      , MonadRandom == 0.5.*
@@ -46,6 +46,7 @@ test-suite gp-sandbox-test
   main-is:             Spec.hs
   build-depends:       base > 4.9
                      , gp-sandbox
+                     , mtl > 2.2
                      , classy-prelude
                      , containers > 0.5
                      , hspec

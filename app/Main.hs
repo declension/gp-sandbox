@@ -27,8 +27,6 @@ evolveMain = do
   let prettyExpr = show (unInd result)
   printf "Evaluates to: %s using %s.\n" (maybe "??" show (eval $ unInd result)) prettyExpr
 
-type MyState = StateT GameState IO ()
-
 fakeResults :: NonEmpty.NonEmpty (Player, [PlayerRoundResult])
 fakeResults = NonEmpty.fromList [(alice,   [prr 0 0, prr 1 0, prr 1 1, prr 3 3]),
                                  (bob,     [prr 0 1, prr 0 1, prr 1 0, prr 0 0]),

@@ -4,12 +4,14 @@ import Test.Hspec
 import OhHell
 import qualified Data.List.NonEmpty as NonEmpty (fromList)
 import qualified Data.Set as Set
+import Control.Monad.State (execState)
 
 spec :: Spec
 spec = do
   basicSpec
   dealingSpec
   scoringSpec
+  biddingSpec
 
 alice = Player 1 "Alice"
 bob = Player 2 "Bob"
@@ -67,4 +69,12 @@ dealingSpec = describe "Dealing" $ do
 
     it "supports bid busting" $ do
       let dealer = RikikiDealingFor 3
-      validBids dealer 2 [(alice, 0), (bob, 1)] `shouldBe` Set.fromList [0, 2]
+      validBids dealer 4 [(alice, 0), (bob, 1)] `shouldBe` Set.fromList [0, 1, 2, 4]
+
+biddingSpec :: Spec
+biddingSpec = describe "Bidding" $ do
+    it "should work" $ do
+      let dealer = RikikiDealingFor 3
+      let players = [alice, bob, charlie]
+      let results = execState (bidOnRound dealer 2) (players, [])
+      results `shouldBe` ([], [(alice, 0), (bob, 0), (charlie, 0)])

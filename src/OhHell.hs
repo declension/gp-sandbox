@@ -12,7 +12,8 @@ import qualified Data.Set as Set
 import Game.Implement.Card (Card, OrderedCard, fullDeck, sortCardsBy)
 import Game.Implement.Card.Standard.Poker (Order(AceHighRankOrder))
 import Game.Implement.Card.Standard
-import Control.Monad.State (StateT, get, put, modify, lift)
+import Control.Monad.State (StateT, get, put, modify, lift,execStateT,State,execState)
+import Control.Monad (unless)
 import Text.Printf (printf)
 import Data.Set (Set)
 import Data.Semigroup ((<>))
@@ -61,9 +62,6 @@ type RoundNum = Int
 type NumCards = Int
 type NumPlayers = Int
 
--- The state we need to track throughout the game
-type GameState = Results
-
 
 class ScorerRules a where
   scoreForPlayerRound :: a -> PlayerRoundResult -> Score
@@ -97,12 +95,12 @@ class DealerRules dr where
   bidBusting :: dr -> Bool
 
   -- What are all the valid bids given the previous bids
-  validBids :: dr -> NumCards -> [(Player, Bid)] -> Set Bid
+  validBids :: dr -> NumCards -> PlayerBids -> Set Bid
   validBids rules numCards bids
     | bidBusting rules && len bids == (numPlayers rules - 1) =  Set.difference allBids disallowed
     | otherwise = allBids
     where allBids = Set.fromList [0..numCards]
-          disallowed = Set.singleton $ sum (List.map snd bids)
+          disallowed = Set.singleton $ numCards - sum (List.map snd bids)
 
 data RikikiDealing = RikikiDealingFor Int
 
@@ -122,7 +120,7 @@ chooseBid results hand = NonEmpty.head
 
 
 -- Play a round of the game
-playGame :: (DealerRules dr, ScorerRules sr) => dr -> sr -> StateT GameState IO ()
+playGame :: (DealerRules d, ScorerRules s) => d -> s -> StateT Results IO ()
 playGame dealerRules scorerRules = do
   results <- get
   let roundNo = ((+1) . len . snd . NonEmpty.head) results
@@ -134,14 +132,27 @@ playGame dealerRules scorerRules = do
 
     -- bid
     lift $ printf "Dealing %d card(s)...\n" cardsThisRound
-    let possibles = validBidsFor [(NonEmpty.head players, 0)]
-                    where validBidsFor = validBids dealerRules cardsThisRound
-    print $ Set.toList possibles
+    let bidResults = execState (bidOnRound dealerRules cardsThisRound) (NonEmpty.toList players, [])
+    print $ snd bidResults
     let roundResults = fakeResultsFor players
     let results' = updatePlayer <$> results
           where updatePlayer (p, history) = (p, roundResults ! p : history)
     put results'
     playGame dealerRules scorerRules
+
+type PlayerBids = [(Player, Bid)]
+
+-- All players bid for a round
+bidOnRound :: (DealerRules d) => d -> NumCards -> State ([Player], PlayerBids) ()
+bidOnRound dealerRules cardsThisRound = do
+  (players, bidsSoFar) <- get
+  unless (List.null players) $ do
+     let options = validBids dealerRules cardsThisRound bidsSoFar
+     let newBid = List.head $ Set.toList options
+     let p : ps = players
+     put (ps, bidsSoFar ++ [(p, newBid)])
+     bidOnRound dealerRules cardsThisRound
+
 
 fakeResultsFor :: NonEmpty Player -> RoundResults
 fakeResultsFor players = Map.fromList . NonEmpty.toList $ NonEmpty.zip players fakeResults
