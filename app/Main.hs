@@ -27,20 +27,19 @@ evolveMain = do
   let prettyExpr = show (unInd result)
   printf "Evaluates to: %s using %s.\n" (maybe "??" show (eval $ unInd result)) prettyExpr
 
-fakeResults :: NonEmpty.NonEmpty (Player, [PlayerRoundResult])
-fakeResults = NonEmpty.fromList [(alice,   [prr 0 0, prr 1 0, prr 1 1, prr 3 3]),
-                                 (bob,     [prr 0 1, prr 0 1, prr 1 0, prr 0 0]),
-                                 (charlie, [prr 0 1, prr 0 0, prr 1 1, prr 0 1])]
+emptyResults :: NonEmpty.NonEmpty (Player, [PlayerRoundResult])
+emptyResults = NonEmpty.fromList [(alice,   []),
+                                 (bob,     []),
+                                 (charlie, [])]
     where alice   = Player 1 "Alice"
           bob     = Player 2 "Bob"
           charlie = Player 3 "Charlie"
-          prr     = PlayerRoundResult
 
 main :: IO ()
 main = do
   print deck
-  let results = fakeResults
+  let results = emptyResults
   let scoringRules = ProgressiveScoring 10 (-1)
-  let dealingRules = RikikiDealingFor (NonEmpty.length fakeResults)
+  let dealingRules = RikikiDealingFor (NonEmpty.length results)
   finalResults <- execStateT (playGame dealingRules scoringRules) results
   print finalResults

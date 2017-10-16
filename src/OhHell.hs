@@ -132,9 +132,9 @@ playGame dealerRules scorerRules = do
 
     -- bid
     lift $ printf "Dealing %d card(s)...\n" cardsThisRound
-    let bidResults = execState (bidOnRound dealerRules cardsThisRound) (NonEmpty.toList players, [])
-    print $ snd bidResults
-    let roundResults = fakeResultsFor players
+    let (_, bidResults) = execState (bidOnRound dealerRules cardsThisRound) (NonEmpty.toList players, [])
+    print bidResults
+    let roundResults = fakeResultsFor bidResults
     let results' = updatePlayer <$> results
           where updatePlayer (p, history) = (p, roundResults ! p : history)
     put results'
@@ -154,6 +154,5 @@ bidOnRound dealerRules cardsThisRound = do
      bidOnRound dealerRules cardsThisRound
 
 
-fakeResultsFor :: NonEmpty Player -> RoundResults
-fakeResultsFor players = Map.fromList . NonEmpty.toList $ NonEmpty.zip players fakeResults
-  where fakeResults = NonEmpty.repeat $ PlayerRoundResult 99 99
+fakeResultsFor :: [(Player, Bid)] -> RoundResults
+fakeResultsFor playerBids = Map.fromList $ second (\b -> PlayerRoundResult {handBid=b, handTaken=0}) <$> playerBids
