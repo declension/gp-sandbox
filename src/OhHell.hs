@@ -17,6 +17,7 @@ import Control.Monad (unless)
 import Text.Printf (printf)
 import Data.Set (Set)
 import Data.Semigroup ((<>))
+import Control.Monad.Random (RandomGen, RandT, getRandomR, mkStdGen, evalRandT)
 
 len = List.length
 --import Prelude (Int, Show, Eq, Ord, String, show, ($), (.), (<$>), fmap, otherwise, sum, (==), (+), (*), (-), (abs))
@@ -113,11 +114,6 @@ instance DealerRules RikikiDealing where
                           zeros = List.repeat 0
   bidBusting dr = True
 
--- Choose a bid for the given hand.
--- 'options' is the bids available, as determined by the rule system
-chooseBid :: Results -> Hand -> NonEmpty Bid -> Bid
-chooseBid results hand = NonEmpty.head
-
 
 -- Play a round of the game
 playGame :: (DealerRules d, ScorerRules s) => d -> s -> StateT Results IO ()
@@ -128,11 +124,12 @@ playGame dealerRules scorerRules = do
   if cardsThisRound == 0 then return () else do
     let players = NonEmpty.map fst results
     let numPlayers = NonEmpty.length results
-    lift $ printf "--- round #%02d (with %d players) ---\n" roundNo numPlayers
+    liftIO $ printf "--- round #%02d (with %d players) ---\n" roundNo numPlayers
 
     -- bid
-    lift $ printf "Dealing %d card(s)...\n" cardsThisRound
-    let (_, bidResults) = execState (bidOnRound dealerRules cardsThisRound) (NonEmpty.toList players, [])
+    liftIO $ printf "Dealing %d card(s)...\n" cardsThisRound
+    let ng = mkStdGen 0
+    let (_, bidResults) =  flip execState (NonEmpty.toList players, []) $ evalRandT (bidOnRound dealerRules cardsThisRound) ng
     print bidResults
     let roundResults = fakeResultsFor bidResults
     let results' = updatePlayer <$> results
@@ -143,12 +140,13 @@ playGame dealerRules scorerRules = do
 type PlayerBids = [(Player, Bid)]
 
 -- All players bid for a round
-bidOnRound :: (DealerRules d) => d -> NumCards -> State ([Player], PlayerBids) ()
+bidOnRound :: (DealerRules d, RandomGen g) => d -> NumCards -> RandT g (State ([Player], PlayerBids)) ()
 bidOnRound dealerRules cardsThisRound = do
   (players, bidsSoFar) <- get
   unless (List.null players) $ do
-     let options = validBids dealerRules cardsThisRound bidsSoFar
-     let newBid = List.head $ Set.toList options
+     let options = Set.toList $ validBids dealerRules cardsThisRound bidsSoFar
+     rnd <- getRandomR (0 :: Int, len options - 1)
+     let newBid = options List.!! rnd
      let p : ps = players
      put (ps, bidsSoFar ++ [(p, newBid)])
      bidOnRound dealerRules cardsThisRound
