@@ -5,7 +5,7 @@ import OhHell
 import qualified Data.List.NonEmpty as NonEmpty (fromList)
 import qualified Data.Set as Set
 import Control.Monad.State (execState)
-import Control.Monad.Random (mkStdGen,evalRandT)
+import Control.Monad.Random (mkStdGen,evalRandT,evalRand)
 
 spec :: Spec
 spec = do
@@ -78,5 +78,5 @@ biddingSpec = describe "Bidding" $ do
       let dealer = RikikiDealingFor 3
       let players = [alice, bob, charlie]
       let g = mkStdGen 0
-      let results = flip execState (players, []) $ evalRandT (bidOnRound dealer 2) g
-      results `shouldBe` ([], [(alice, 2), (bob, 2), (charlie, 0)])
+      let results = evalRand (bidOnRound dealer 2 players []) g
+      results `shouldBe` [(alice, 2), (bob, 2), (charlie, 0)]
