@@ -20,7 +20,6 @@ import Data.Semigroup ((<>))
 import Control.Monad.Random (RandomGen, RandT, getRandomR, mkStdGen, evalRandT,Rand,MonadRandom,evalRand,getStdGen)
 
 len = List.length
---import Prelude (Int, Show, Eq, Ord, String, show, ($), (.), (<$>), fmap, otherwise, sum, (==), (+), (*), (-), (abs))
 
 deck :: NonEmpty PlayingCard
 deck = fromList $ sortCardsBy AceHighRankOrder fullDeck
@@ -28,7 +27,7 @@ deck = fromList $ sortCardsBy AceHighRankOrder fullDeck
 newtype Hand = Hand (Set PlayingCard)
   deriving (Eq)
 
--- Make constructing cards prettier, e.g. @Ace ## Spades@
+-- | Make constructing cards prettier, e.g. @Ace ## Spades@
 (##) = PlayingCard
 infix 8 ##
 
@@ -40,20 +39,21 @@ instance Show Hand where
 handOf :: [PlayingCard] -> Hand
 handOf lst = Hand $ Set.fromList lst
 
--- Basic Player information
+-- | Basic Player information
 data Player = Player {playerId :: Int, playerName :: String} deriving (Eq, Ord)
 -- ...with pretty printing
 instance Show Player where
   show (Player pid name) = printf "%s <#%d>" name pid
 
-data PlayerRoundResult = PlayerRoundResult {handBid :: Int, handTaken :: Int} deriving (Eq, Ord)
+data PlayerRoundResult = PlayerRoundResult {handBid :: Bid, handTaken :: Taken} deriving (Eq, Ord)
 instance Show PlayerRoundResult where
   show (PlayerRoundResult bid taken) = printf "{bid:%d, got:%d}" bid taken
 
--- The results round-by-round, broken down by player
+-- | The results round-by-round, broken down by player
 type Results = NonEmpty (Player, [PlayerRoundResult])
 type Scores = NonEmpty (Player, Score)
 type RoundResults = Map Player PlayerRoundResult
+type PlayerBids = [(Player, Bid)]
 
 -- Some aliases for readability
 type Bid   = Int
@@ -81,21 +81,25 @@ scoresFor :: ScorerRules a =>
 scoresFor rules results = second (totalScore rules) <$> results
 
 
--- This can definitely be empty
+-- | Get ths cores for some results.
+--   This can definitely be empty
 totalScore :: ScorerRules a => a -> [PlayerRoundResult] -> Score
 totalScore rules = sum . fmap (scoreForPlayerRound rules)
 
--- Rules (variations) governing playing
+-- | Rules (variations) governing playing
 -- Notably: 1. Number of cards dealt per round
 --          2. What constitutes a valid bid for a player on a round (e.g. bid-busting)
 class DealerRules dr where
+  -- | Number of players in this rule set
   numPlayers :: dr -> NumPlayers
+
+  -- | Number of cards to deal in the given round
   numCardsForRound :: dr -> RoundNum -> NumCards
 
-  -- Is bid-busting (last bidder can't allow a total bid equal to hand size) enabled?
+  -- | Is bid-busting (last bidder can't allow a total bid equal to hand size) enabled?
   bidBusting :: dr -> Bool
 
-  -- What are all the valid bids given the previous bids
+  -- | What are all the valid bids given the previous bids
   validBids :: dr -> NumCards -> PlayerBids -> Set Bid
   validBids rules numCards bids
     | bidBusting rules && len bids == (numPlayers rules - 1) =  Set.difference allBids disallowed
@@ -103,7 +107,8 @@ class DealerRules dr where
     where allBids = Set.fromList [0..numCards]
           disallowed = Set.singleton $ numCards - sum (List.map snd bids)
 
-data RikikiDealing = RikikiDealingFor Int
+-- | Rikiki-style dealing, for a given number of players
+data RikikiDealing = RikikiDealingFor NumPlayers
 
 instance DealerRules RikikiDealing where
   numPlayers (RikikiDealingFor n) = n
@@ -137,8 +142,6 @@ playGame dealerRules scorerRules = do
     put results'
     playGame dealerRules scorerRules
 
-type PlayerBids = [(Player, Bid)]
-
 -- | All players bid for a round
 bidOnRound :: (DealerRules d, MonadRandom m) => d -> NumCards -> [Player] -> m PlayerBids
 bidOnRound d n ps = bidOnRound' d n ps []
@@ -152,6 +155,6 @@ bidOnRound' dealerRules cardsThisRound players bidsSoFar = do
     let p : ps = players
     bidOnRound' dealerRules cardsThisRound ps (bidsSoFar ++ [(p, newBid)])
 
-
-fakeResultsFor :: [(Player, Bid)] -> RoundResults
+-- | Some fake results, whilst we don't have actual game logic...
+fakeResultsFor :: PlayerBids -> RoundResults
 fakeResultsFor playerBids = Map.fromList $ second (\b -> PlayerRoundResult {handBid=b, handTaken=0}) <$> playerBids
