@@ -129,7 +129,7 @@ playGame dealerRules scorerRules = do
     -- bid
     liftIO $ printf "Dealing %d card(s)...\n" cardsThisRound
     ng <- liftIO getStdGen
-    let bidResults = evalRand (bidOnRound dealerRules cardsThisRound (NonEmpty.toList players) []) ng
+    let bidResults = evalRand (bidOnRound dealerRules cardsThisRound (NonEmpty.toList players)) ng
     print bidResults
     let roundResults = fakeResultsFor bidResults
     let results' = updatePlayer <$> results
@@ -139,15 +139,18 @@ playGame dealerRules scorerRules = do
 
 type PlayerBids = [(Player, Bid)]
 
--- All players bid for a round
-bidOnRound :: (DealerRules d, MonadRandom m) => d -> NumCards -> [Player] -> PlayerBids -> m PlayerBids
-bidOnRound _ _ [] bidsSoFar = return bidsSoFar
-bidOnRound dealerRules cardsThisRound players bidsSoFar = do
+-- | All players bid for a round
+bidOnRound :: (DealerRules d, MonadRandom m) => d -> NumCards -> [Player] -> m PlayerBids
+bidOnRound d n ps = bidOnRound' d n ps []
+
+bidOnRound' :: (DealerRules d, MonadRandom m) => d -> NumCards -> [Player] -> PlayerBids -> m PlayerBids
+bidOnRound' _ _ [] bidsSoFar = return bidsSoFar
+bidOnRound' dealerRules cardsThisRound players bidsSoFar = do
     let options = Set.toList $ validBids dealerRules cardsThisRound bidsSoFar
-    rnd <- getRandomR (0 :: Int, len options - 1)
+    rnd <- getRandomR (0, len options - 1)
     let newBid = options List.!! rnd
     let p : ps = players
-    bidOnRound dealerRules cardsThisRound ps (bidsSoFar ++ [(p, newBid)])
+    bidOnRound' dealerRules cardsThisRound ps (bidsSoFar ++ [(p, newBid)])
 
 
 fakeResultsFor :: [(Player, Bid)] -> RoundResults

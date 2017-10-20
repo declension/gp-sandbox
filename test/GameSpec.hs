@@ -78,5 +78,5 @@ biddingSpec = describe "Bidding" $ do
       let dealer = RikikiDealingFor 3
       let players = [alice, bob, charlie]
       let g = mkStdGen 0
-      let results = evalRand (bidOnRound dealer 2 players []) g
+      let results = evalRand (bidOnRound dealer 2 players) g
       results `shouldBe` [(alice, 2), (bob, 2), (charlie, 0)]
