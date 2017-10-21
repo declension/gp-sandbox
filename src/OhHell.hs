@@ -45,7 +45,8 @@ data Player = Player {playerId :: Int, playerName :: String} deriving (Eq, Ord)
 instance Show Player where
   show (Player pid name) = printf "%s <#%d>" name pid
 
-data PlayerRoundResult = PlayerRoundResult {handBid :: Bid, handTaken :: Taken} deriving (Eq, Ord)
+data PlayerRoundResult = PlayerRoundResult {handBid :: Bid, handTaken :: Taken}
+  deriving (Eq, Ord)
 instance Show PlayerRoundResult where
   show (PlayerRoundResult bid taken) = printf "{bid:%d, got:%d}" bid taken
 
@@ -74,16 +75,18 @@ instance ScorerRules ProgressiveScoring where
    | bid == taken = flatBonus sr + bid * bid
    | otherwise    = penaltyFactor sr * abs (bid - taken)
 
-scoresFor :: ScorerRules a =>
-      a ->
-      Results ->
-      Scores
+scoresFor :: ScorerRules s
+          => s
+          -> Results
+          -> Scores
 scoresFor rules results = second (totalScore rules) <$> results
 
 
--- | Get ths cores for some results.
---   This can definitely be empty
-totalScore :: ScorerRules a => a -> [PlayerRoundResult] -> Score
+-- | Get the scores for some results.
+totalScore :: ScorerRules s
+           => s
+           -> [PlayerRoundResult]      -- ^ This can definitely be empty
+           -> Score
 totalScore rules = sum . fmap (scoreForPlayerRound rules)
 
 -- | Rules (variations) governing playing
@@ -108,7 +111,7 @@ class DealerRules dr where
           disallowed = Set.singleton $ numCards - sum (List.map snd bids)
 
 -- | Rikiki-style dealing, for a given number of players
-data RikikiDealing = RikikiDealingFor NumPlayers
+newtype RikikiDealing = RikikiDealingFor NumPlayers
 
 instance DealerRules RikikiDealing where
   numPlayers (RikikiDealingFor n) = n
@@ -121,7 +124,10 @@ instance DealerRules RikikiDealing where
 
 
 -- Play a round of the game
-playGame :: (DealerRules d, ScorerRules s) => d -> s -> StateT Results IO ()
+playGame :: (DealerRules d, ScorerRules s)
+            => d
+            -> s
+            -> StateT Results IO ()
 playGame dealerRules scorerRules = do
   results <- get
   let roundNo = ((+1) . len . snd . NonEmpty.head) results
@@ -143,10 +149,19 @@ playGame dealerRules scorerRules = do
     playGame dealerRules scorerRules
 
 -- | All players bid for a round
-bidOnRound :: (DealerRules d, MonadRandom m) => d -> NumCards -> [Player] -> m PlayerBids
+bidOnRound :: (DealerRules d, MonadRandom m)
+           => d
+           -> NumCards
+           -> [Player]
+           -> m PlayerBids
 bidOnRound d n ps = bidOnRound' d n ps []
 
-bidOnRound' :: (DealerRules d, MonadRandom m) => d -> NumCards -> [Player] -> PlayerBids -> m PlayerBids
+bidOnRound' :: (DealerRules d, MonadRandom m)
+            => d
+            -> NumCards
+            -> [Player]
+            -> PlayerBids
+            -> m PlayerBids
 bidOnRound' _ _ [] bidsSoFar = return bidsSoFar
 bidOnRound' dealerRules cardsThisRound players bidsSoFar = do
     let options = Set.toList $ validBids dealerRules cardsThisRound bidsSoFar
