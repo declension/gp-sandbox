@@ -132,7 +132,7 @@ playGame dealerRules scorerRules = do
   results <- get
   let roundNo = ((+1) . len . snd . NonEmpty.head) results
   let cardsThisRound = numCardsForRound dealerRules roundNo
-  if cardsThisRound == 0 then return () else do
+  unless (cardsThisRound == 0) $ do
     let players = NonEmpty.map fst results
     let numPlayers = NonEmpty.length results
     liftIO $ printf "--- round #%02d (with %d players) ---\n" roundNo numPlayers
