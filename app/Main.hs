@@ -10,9 +10,11 @@ import Text.Printf (printf)
 import qualified Data.List.NonEmpty as NonEmpty
 
 import OhHell
-import Control.Monad.State (StateT, execStateT)
-import ClassyPrelude hiding (last)
+import Control.Monad.State (StateT, execStateT,evalStateT,runStateT)
+import ClassyPrelude hiding (last, putStrLn)
+import qualified Prelude
 import Data.List (last)
+import Control.Monad.Writer (WriterT, runWriterT,execWriterT)
 
 evolveMain :: IO ()
 evolveMain = do
@@ -41,5 +43,6 @@ main = do
   let results = emptyResults
   let scoringRules = ProgressiveScoring 10 (-1)
   let dealingRules = RikikiDealingFor (NonEmpty.length results)
-  finalResults <- execStateT (playGame dealingRules scoringRules) results
+  (log, finalResults) <- runStateT (execWriterT (playGame dealingRules scoringRules)) results
+  Prelude.putStrLn log
   print finalResults

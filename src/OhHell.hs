@@ -18,6 +18,7 @@ import Text.Printf (printf)
 import Data.Set (Set)
 import Data.Semigroup ((<>))
 import Control.Monad.Random (RandomGen, RandT, getRandomR, mkStdGen, evalRandT,Rand,MonadRandom,evalRand,getStdGen)
+import Control.Monad.Writer (WriterT,tell)
 
 len = List.length
 
@@ -63,6 +64,7 @@ type Score = Int
 type RoundNum = Int
 type NumCards = Int
 type NumPlayers = Int
+type Log = String
 
 
 class ScorerRules a where
@@ -124,10 +126,10 @@ instance DealerRules RikikiDealing where
 
 
 -- Play a round of the game
-playGame :: (DealerRules d, ScorerRules s)
+playGame :: (DealerRules d, ScorerRules s, MonadRandom m)
             => d
             -> s
-            -> StateT Results IO ()
+            -> WriterT Log (StateT Results m) ()
 playGame dealerRules scorerRules = do
   results <- get
   let roundNo = ((+1) . len . snd . NonEmpty.head) results
@@ -135,13 +137,12 @@ playGame dealerRules scorerRules = do
   unless (cardsThisRound == 0) $ do
     let players = NonEmpty.map fst results
     let numPlayers = NonEmpty.length results
-    liftIO $ printf "--- round #%02d (with %d players) ---\n" roundNo numPlayers
+    tell $ printf "--- round #%02d (with %d players) ---\n" roundNo numPlayers
 
     -- bid
-    liftIO $ printf "Dealing %d card(s)...\n" cardsThisRound
-    ng <- liftIO getStdGen
-    let bidResults = evalRand (bidOnRound dealerRules cardsThisRound (NonEmpty.toList players)) ng
-    print bidResults
+    tell $ printf "Dealing %d card(s)...\n" cardsThisRound
+    bidResults <- bidOnRound dealerRules cardsThisRound (NonEmpty.toList players)
+    tell $ show bidResults <> "\n"
     let roundResults = fakeResultsFor bidResults
     let results' = updatePlayer <$> results
           where updatePlayer (p, history) = (p, roundResults ! p : history)
