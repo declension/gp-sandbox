@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     GP, OhHell
+  exposed-modules:     GP, OhHell, OhHell.Game, OhHell.Strategy
   build-depends:       base >= 4.9 && < 5
                      , classy-prelude
                      , containers > 0.5
@@ -47,6 +47,7 @@ test-suite gp-sandbox-test
   build-depends:       base > 4.9
                      , gp-sandbox
                      , mtl > 2.2
+                     , general-games
                      , MonadRandom == 0.5.*
                      , classy-prelude
                      , containers > 0.5

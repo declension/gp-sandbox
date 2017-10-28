@@ -2,10 +2,13 @@ module GameSpec where
 
 import Test.Hspec
 import OhHell
+import OhHell.Strategy (calculateBid, RandomBidder(RandomBidder))
 import qualified Data.List.NonEmpty as NonEmpty (fromList)
 import qualified Data.Set as Set
 import Control.Monad.State (execState)
 import Control.Monad.Random (mkStdGen,evalRandT,evalRand)
+import OhHell.Game (bidOnRound)
+import Game.Implement.Card (fullDeck)
 
 spec :: Spec
 spec = do
@@ -13,6 +16,7 @@ spec = do
   dealingSpec
   scoringSpec
   biddingSpec
+  strategySpec
 
 alice = Player 1 "Alice"
 bob = Player 2 "Bob"
@@ -68,15 +72,35 @@ dealingSpec = describe "Dealing" $ do
       let dealer = RikikiDealingFor 3
       validBids dealer 2 [] `shouldBe` Set.fromList [0, 1, 2]
 
+    it "allows empty bids " $ do
+      let dealer = RikikiDealingFor 3
+      validBids dealer 0 [] `shouldBe` Set.empty
+
     it "supports bid busting" $ do
       let dealer = RikikiDealingFor 3
       validBids dealer 4 [(alice, 0), (bob, 1)] `shouldBe` Set.fromList [0, 1, 2, 4]
 
 biddingSpec :: Spec
-biddingSpec = describe "Bidding" $ do
-    it "should work" $ do
+biddingSpec = describe "Dealing and bidding for a round" $ do
+    it "should deplete the deck" $ do
       let dealer = RikikiDealingFor 3
       let players = [alice, bob, charlie]
       let g = mkStdGen 0
-      let results = evalRand (bidOnRound dealer 2 players) g
-      results `shouldBe` [(alice, 2), (bob, 2), (charlie, 0)]
+      let deck = fullDeck
+      let (results, deck') = evalRand (bidOnRound dealer 2 deck players) g
+--      results `shouldBe` [(alice, 2), (bob, 2), (charlie, 0)]
+      (len deck') `shouldBe` (52 - 6)
+
+
+strategySpec :: Spec
+strategySpec = describe "RandomStrategy" $
+    it "should respect dealer" $ do
+      let dealer = RikikiDealingFor 3
+      let player = alice
+      let numCards = 4
+      let cards = NonEmpty.fromList $ take numCards fullDeck
+      bid <- calculateBid RandomBidder dealer player [(bob, 2), (charlie, 1)] (Hand cards)
+      bid `shouldSatisfy` (<= numCards)
+      bid `shouldSatisfy` (>= 0)
+      bid `shouldSatisfy` (/= 1)
+

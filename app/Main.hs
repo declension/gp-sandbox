@@ -10,11 +10,14 @@ import Text.Printf (printf)
 import qualified Data.List.NonEmpty as NonEmpty
 
 import OhHell
+import OhHell.Game (playGame)
 import Control.Monad.State (StateT, execStateT,evalStateT,runStateT)
 import ClassyPrelude hiding (last, putStrLn)
 import qualified Prelude
 import Data.List (last)
 import Control.Monad.Writer (WriterT, runWriterT,execWriterT)
+import Game.Implement.Card (fullDeck)
+import Game.Implement.Card.Standard (PlayingCard)
 
 evolveMain :: IO ()
 evolveMain = do
@@ -39,7 +42,6 @@ emptyResults = NonEmpty.fromList [(alice,   []),
 
 main :: IO ()
 main = do
-  print deck
   let results = emptyResults
   let scoringRules = ProgressiveScoring 10 (-1)
   let dealingRules = RikikiDealingFor (NonEmpty.length results)
