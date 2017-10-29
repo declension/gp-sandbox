@@ -15,6 +15,7 @@ import qualified Data.Set as Set
 import qualified Data.List as List
 import Game.Implement.Card.Standard (PlayingCard)
 import Game.Implement.Card (fullDeck,shuffle)
+import System.Random.Shuffle (shuffleM)
 
 -- Play a round of the game
 playGame :: (DealerRules d, ScorerRules s, MonadRandom m)
@@ -26,8 +27,8 @@ playGame dealerRules scorerRules = do
   let roundNo = ((+1) . len . snd . NonEmpty.head) results
   let cardsThisRound = numCardsForRound dealerRules roundNo
   unless (cardsThisRound == 0) $ do
---    deck <- shuffle fullDeck
-    let deck = fullDeck
+    deck <- shuffledDeck
+    tell $ "Deck: " <> show deck
     let players = NonEmpty.map fst results
     let numPlayers = NonEmpty.length results
     tell $ printf "--- round #%02d (with %d players) ---\n" roundNo numPlayers
@@ -40,8 +41,12 @@ playGame dealerRules scorerRules = do
     let results' = updatePlayer <$> results
           where updatePlayer (p, history) = (p, roundResults ! p : history)
     put results'
-    tell $ printf "We have %d card(s) remaining" (len deck)
     playGame dealerRules scorerRules
+
+shuffledDeck :: (MonadRandom m)
+             => m Deck
+shuffledDeck = shuffleM fullDeck
+
 
 dealHand :: (MonadRandom m)
          => NumCards
