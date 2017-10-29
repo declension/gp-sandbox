@@ -1,5 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-module OhHell.Strategy where
+module OhHell.Strategies where
 import ClassyPrelude hiding (fromList)
 import qualified Data.List.NonEmpty as NonEmpty
 
@@ -8,21 +8,19 @@ import Control.Monad.Random (MonadRandom,getRandomR)
 import qualified Data.Set as Set
 import qualified Data.List as List
 
-class (Show b) => BidStrategy b where
-  -- | All players bid for a round
-  calculateBid :: (DealerRules d, MonadRandom m)
-             => b
-             -> d
-             -> Player
-             -> PlayerBids
-             -> Hand
-             -> m Bid
 
-data RandomBidder = RandomBidder deriving Show
+data RandomBidder = RandomBidder PlayerId deriving (Show, Eq, Ord)
 
-instance BidStrategy RandomBidder where
-  calculateBid bs dealerRules player bidsSoFar (Hand cards) = do
+instance Player RandomBidder where
+  getPlayerId (RandomBidder pid) = pid
+  getPlayerName (RandomBidder pid) = pid
+
+  chooseBid player dealerRules trumps bidsSoFar (Hand cards) = do
     let cardsThisRound = NonEmpty.length cards
     let options = Set.toList $ validBids dealerRules cardsThisRound bidsSoFar
     rnd <- getRandomR (0, len options - 1)
     return $ options List.!! rnd
+
+  chooseCard player dealerRules bids played (Hand hand) = do
+    rnd <- getRandomR (0, NonEmpty.length hand - 1)
+    return $ hand NonEmpty.!! rnd

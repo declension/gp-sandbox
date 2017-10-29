@@ -38,11 +38,6 @@ instance Show Hand where
 handOf :: [PlayingCard] -> Hand
 handOf lst = Hand $ NonEmpty.fromList lst
 
--- | Basic Player information
-data Player = Player {playerId :: Int, playerName :: String} deriving (Eq, Ord)
--- ...with pretty printing
-instance Show Player where
-  show (Player pid name) = printf "%s <#%d>" name pid
 
 data PlayerRoundResult = PlayerRoundResult {handBid :: Bid, handTaken :: Taken}
   deriving (Eq, Ord)
@@ -50,10 +45,11 @@ instance Show PlayerRoundResult where
   show (PlayerRoundResult bid taken) = printf "{bid:%d, got:%d}" bid taken
 
 -- | The results round-by-round, broken down by player
-type Results = NonEmpty (Player, [PlayerRoundResult])
-type Scores = NonEmpty (Player, Score)
-type RoundResults = Map Player PlayerRoundResult
-type PlayerBids = [(Player, Bid)]
+type PlayerId = String
+type RoundResults = Map PlayerId PlayerRoundResult
+type Results = [RoundResults]
+type Scores = Map PlayerId Score
+type PlayerBids = [(PlayerId, Bid)]
 
 -- Some aliases for readability
 type Deck  = [PlayingCard]
@@ -76,19 +72,15 @@ instance ScorerRules ProgressiveScoring where
    | bid == taken = flatBonus sr + bid * bid
    | otherwise    = penaltyFactor sr * abs (bid - taken)
 
-scoresFor :: ScorerRules s
-          => s
+-- | Generate scores given some rules and some results
+scoresFor :: ScorerRules r
+          => r
           -> Results
           -> Scores
-scoresFor rules results = second (totalScore rules) <$> results
+scoresFor rules results = unionsWith (+) roundScores
+  where roundScores = fmap scoresFromResults results
+        scoresFromResults = fmap (scoreForPlayerRound rules)
 
-
--- | Get the scores for some results.
-totalScore :: ScorerRules s
-           => s
-           -> [PlayerRoundResult]      -- ^ This can definitely be empty
-           -> Score
-totalScore rules = sum . fmap (scoreForPlayerRound rules)
 
 -- | Rules (variations) governing playing
 -- Notably: 1. Number of cards dealt per round
@@ -104,13 +96,16 @@ class DealerRules dr where
   bidBusting :: dr -> Bool
 
   -- | What are all the valid bids given the previous bids
-  validBids :: dr -> NumCards -> PlayerBids -> Set Bid
+  validBids :: dr
+            -> NumCards
+            -> PlayerBids
+            -> Set Bid
   validBids rules numCards bids
     | numCards <= 0 = Set.empty
     | bidBusting rules && len bids == (numPlayers rules - 1) =  Set.difference allBids disallowed
     | otherwise = allBids
     where allBids = Set.fromList [0..numCards]
-          disallowed = Set.singleton $ numCards - sum (List.map snd bids)
+          disallowed = Set.singleton $ numCards - sum (fmap snd bids)
 
 -- | Rikiki-style dealing, for a given number of players
 newtype RikikiDealing = RikikiDealingFor NumPlayers
@@ -123,3 +118,29 @@ instance DealerRules RikikiDealing where
                           down = List.reverse up
                           zeros = List.repeat 0
   bidBusting dr = True
+
+
+class (Show p, Eq p, Ord p) => Player p where
+  -- | Return the player ID
+  getPlayerId :: p -> PlayerId
+
+  -- | Return the player name (may be the ID)
+  getPlayerName :: p -> String
+
+  -- | Select a bid given some input
+  chooseBid :: (DealerRules d, MonadRandom m)
+             => p
+             -> d               -- ^ Rules of the game
+             -> Maybe Suit      -- ^ Trumps if any
+             -> PlayerBids      -- ^ What has been bid so far
+             -> Hand            -- ^ The hand this round on which to bid
+             -> m Bid           -- ^ Resulting bid
+
+  -- | Select a card to play given some input
+  chooseCard :: (DealerRules d, MonadRandom m)
+             => p
+             -> d               -- ^ Rules of the game
+             -> NonEmpty [(PlayerId, Bid)] -- ^ What has been bid
+             -> [(PlayerId, PlayingCard)]  -- ^ What has been played so far this hand
+             -> Hand            -- ^ (What remains of) the player's hand
+             -> m PlayingCard   -- ^ The chosen card

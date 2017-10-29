@@ -2,12 +2,15 @@
 
 module Main where
 
+import OhHell.Strategies
+
 import GP (myFitness, eval)
 import GenProg
 import Control.Monad.Random (mkStdGen, evalRand, getStdGen)
 import Text.Printf (printf)
 
 import qualified Data.List.NonEmpty as NonEmpty
+import Data.List.NonEmpty (NonEmpty)
 
 import OhHell
 import OhHell.Game (playGame)
@@ -32,19 +35,16 @@ evolveMain = do
   let prettyExpr = show (unInd result)
   printf "Evaluates to: %s using %s.\n" (maybe "??" show (eval $ unInd result)) prettyExpr
 
-emptyResults :: NonEmpty.NonEmpty (Player, [PlayerRoundResult])
-emptyResults = NonEmpty.fromList [(alice,   []),
-                                 (bob,     []),
-                                 (charlie, [])]
-    where alice   = Player 1 "Alice"
-          bob     = Player 2 "Bob"
-          charlie = Player 3 "Charlie"
+players :: NonEmpty RandomBidder
+players = NonEmpty.fromList [alice, bob, charlie]
+    where alice   = RandomBidder "Alice"
+          bob     = RandomBidder "Bob"
+          charlie = RandomBidder "Charlie"
 
 main :: IO ()
 main = do
-  let results = emptyResults
   let scoringRules = ProgressiveScoring 10 (-1)
-  let dealingRules = RikikiDealingFor (NonEmpty.length results)
-  (log, finalResults) <- runStateT (execWriterT (playGame dealingRules scoringRules)) results
+  let dealingRules = RikikiDealingFor (NonEmpty.length players)
+  (log, finalResults) <- runStateT (execWriterT (playGame dealingRules scoringRules players)) []
   Prelude.putStrLn log
-  print finalResults
+  Prelude.putStrLn $ "Scores are:" ++ show (scoresFor scoringRules finalResults)
