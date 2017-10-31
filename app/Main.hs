@@ -1,8 +1,11 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Main where
 
-import OhHell.Strategies
+import Prelude ()
+import ClassyPrelude hiding (last, putStrLn)
+
+import OhHell.Rules
+import OhHell.Strategies (RandomBidder(RandomBidder))
+import OhHell.Game (playGame)
 
 import GP (myFitness, eval)
 import GenProg
@@ -12,10 +15,7 @@ import Text.Printf (printf)
 import qualified Data.List.NonEmpty as NonEmpty
 import Data.List.NonEmpty (NonEmpty)
 
-import OhHell
-import OhHell.Game (playGame)
 import Control.Monad.State (StateT, execStateT,evalStateT,runStateT)
-import ClassyPrelude hiding (last, putStrLn)
 import qualified Prelude
 import Data.List (last)
 import Control.Monad.Writer (WriterT, runWriterT,execWriterT)

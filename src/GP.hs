@@ -4,12 +4,16 @@
 
 module GP where
 
+import Prelude ()
+import ClassyPrelude
+
 import GenProg
 import Data.Generics
 import Control.Monad (liftM, liftM2)
 import Control.Monad.Random
 import GenProg.GenExpr.Data
 import Text.Printf (printf)
+import qualified Data.List as List
 
 data E = Plus E E
        | Minus E E
@@ -43,7 +47,7 @@ instance GenProg (Rand StdGen) E where
     [liftM2 Plus terminal terminal,
      liftM2 Minus terminal terminal,
      liftM2 Times terminal terminal,
-     liftM2 Div terminal terminal] !! r
+     liftM2 Div terminal terminal] List.!! r
 
 
 myFitness :: Int -> E -> Double

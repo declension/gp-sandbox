@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     GP, OhHell, OhHell.Game, OhHell.Strategies
+  exposed-modules:     GP, OhHell.Player, OhHell.Core, OhHell.Rules OhHell.Game, OhHell.Strategies
   build-depends:       base >= 4.9 && < 5
                      , classy-prelude
                      , containers > 0.5
@@ -26,6 +26,7 @@ library
                      , syb == 0.7.*, syz
                      , MonadRandom == 0.5.*
   default-language:    Haskell2010
+  default-extensions:  NoImplicitPrelude
 
 executable gp-sandbox
   hs-source-dirs:      app

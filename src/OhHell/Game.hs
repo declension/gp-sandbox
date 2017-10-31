@@ -1,8 +1,12 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 module OhHell.Game where
 
-import OhHell
+import Prelude ()
+import ClassyPrelude
+
+import OhHell.Core
+import OhHell.Rules
 import OhHell.Strategies
+import OhHell.Player
 import Control.Monad.Random (MonadRandom)
 import Control.Monad.Writer (WriterT,tell)
 import Control.Monad.State (StateT,put,get)
@@ -10,7 +14,6 @@ import qualified Data.List.NonEmpty as NonEmpty
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.Map as Map
 import Text.Printf (printf)
-import ClassyPrelude
 import Data.Map ((!))
 import qualified Data.Set as Set
 import qualified Data.List as List
@@ -26,7 +29,7 @@ playGame :: (DealerRules d, ScorerRules s, MonadRandom m, Player p)
             -> WriterT Log (StateT Results m) ()
 playGame dealerRules scorerRules players = do
   results <- get
-  let roundNo = len results + 1
+  let roundNo = List.length results + 1
   let cardsThisRound = numCardsForRound dealerRules roundNo
   unless (cardsThisRound == 0) $ do
     top : deck <- shuffledDeck

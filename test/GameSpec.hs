@@ -1,8 +1,16 @@
 module GameSpec where
 
-import Test.Hspec
-import OhHell
+import Prelude ()
+import ClassyPrelude
+
+import OhHell.Core
+import OhHell.Rules
+import OhHell.Player
 import OhHell.Strategies (RandomBidder(RandomBidder))
+
+
+import Test.Hspec
+import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty (fromList)
 import qualified Data.Set as Set
 import qualified Data.Map as Map
@@ -92,7 +100,7 @@ biddingSpec = describe "Dealing and bidding for a round" $ do
       let g = mkStdGen 0
       let deck = fullDeck
       let (results, deck') = evalRand (bidOnRound dealer 2 deck Nothing players) g
-      (len deck') `shouldBe` (52 - 6)
+      List.length deck' `shouldBe` (52 - 6)
 
 
 strategySpec :: Spec
