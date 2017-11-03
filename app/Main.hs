@@ -5,7 +5,7 @@ import ClassyPrelude hiding (last, putStrLn)
 
 import OhHell.Rules
 import OhHell.Strategies (RandomBidder(RandomBidder))
-import OhHell.Game (playGame)
+import OhHell.Game (playGame, shuffledDeck)
 
 import GP (myFitness, eval)
 import GenProg
@@ -45,6 +45,7 @@ main :: IO ()
 main = do
   let scoringRules = ProgressiveScoring 10 (-1)
   let dealingRules = RikikiDealingFor (NonEmpty.length players)
-  (log, finalResults) <- runStateT (execWriterT (playGame dealingRules scoringRules players)) []
+  deck <- shuffledDeck
+  (log, finalResults) <- runStateT (execWriterT (playGame dealingRules scoringRules players deck)) []
   Prelude.putStrLn log
   Prelude.putStrLn $ "Scores are:" ++ show (scoresFor scoringRules finalResults)

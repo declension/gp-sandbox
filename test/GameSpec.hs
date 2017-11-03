@@ -12,6 +12,7 @@ import OhHell.Strategies (RandomBidder(RandomBidder))
 import Test.Hspec
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty (fromList)
+import Data.List.NonEmpty (NonEmpty)
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Control.Monad.State (execState)
@@ -92,15 +93,18 @@ dealingSpec = describe "Dealing" $ do
       let dealer = RikikiDealingFor 3
       validBids dealer 4 [(pidOf alice, 0), (pidOf bob, 1)] `shouldBe` Set.fromList [0, 1, 2, 4]
 
+
 biddingSpec :: Spec
 biddingSpec = describe "Dealing and bidding for a round" $ do
-    it "should deplete the deck" $ do
+    it "should return the right number of results" $ do
       let dealer = RikikiDealingFor 3
-      let players = [alice, bob, charlie]
+      let playerHands = NonEmpty.fromList
+                        [(alice, handOf []),
+                         (bob, handOf []),
+                         (charlie, handOf [])] :: NonEmpty (RandomBidder, Hand)
       let g = mkStdGen 0
-      let deck = fullDeck
-      let (results, deck') = evalRand (bidOnRound dealer 2 deck Nothing players) g
-      List.length deck' `shouldBe` (52 - 6)
+      let results = evalRand (bidOnRound dealer 2 Nothing playerHands) g
+      List.length results `shouldBe` 3
 
 
 strategySpec :: Spec
