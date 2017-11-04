@@ -1,26 +1,26 @@
 module OhHell.Game where
 
-import Prelude ()
-import ClassyPrelude hiding ((<|))
+import           Prelude ()
+import           ClassyPrelude hiding ((<|))
 
-import OhHell.Core
-import OhHell.Rules
-import OhHell.Strategies
-import OhHell.Player
-import Control.Monad.Random (MonadRandom)
-import Control.Monad.Writer (WriterT,tell)
-import Control.Monad.State (StateT,put,get)
+import           OhHell.Core
+import           OhHell.Rules
+import           OhHell.Strategies
+import           OhHell.Player
+import           Control.Monad.Random (MonadRandom)
+import           Control.Monad.Writer (WriterT,tell)
+import           Control.Monad.State (StateT,put,get)
 import qualified Data.List.NonEmpty as NonEmpty
-import Data.List.NonEmpty (NonEmpty)
+import           Data.List.NonEmpty (NonEmpty, NonEmpty((:|)), (<|))
+
 import qualified Data.Map as Map
-import Text.Printf (printf)
-import Data.Map ((!))
+import           Text.Printf (printf)
+import           Data.Map ((!))
 import qualified Data.Set as Set
 import qualified Data.List as List
-import Game.Implement.Card.Standard (PlayingCard,Suit,toSuit)
-import Game.Implement.Card (fullDeck,shuffle)
-import System.Random.Shuffle (shuffleM)
-import Data.List.NonEmpty (NonEmpty((:|)), (<|))
+import           Game.Implement.Card.Standard (PlayingCard,Suit,toSuit)
+import           Game.Implement.Card (fullDeck,shuffle)
+import           System.Random.Shuffle (shuffleM)
 
 -- Play a round of the game
 playGame :: (DealerRules d, ScorerRules s, MonadRandom m, Player p)
