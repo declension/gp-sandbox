@@ -31,38 +31,37 @@ spec = do
 alice = RandomBidder "Alice"
 bob = RandomBidder "Bob"
 charlie = RandomBidder "Charlie"
-prr = PlayerRoundResult
-pidOf = getPlayerId
+rr = RoundResult
 
 basicSpec :: Spec
 basicSpec =
   describe "The game engine" $ do
 
-    it "constructs players properly" $ do
+    it "constructs players properly" $
       getPlayerName charlie `shouldBe` "Charlie"
 
-    it "shows players nicely" $ do
+    it "shows players nicely" $
       show alice `shouldContain` "Alice"
 
     it "constructs HandResults " $ do
-      let handResult = PlayerRoundResult 1 2
+      let handResult = RoundResult 1 2
       handBid handResult `shouldBe` 1
       handTaken handResult `shouldBe` 2
 
 scoringSpec :: Spec
-scoringSpec = describe "Scoring" $ do
+scoringSpec = describe "Scoring" $
 
     it "sums scores correctly for Progressive Scoring" $ do
       -- A combination of scores that should show everything
-      let results = [ Map.fromList [(pidOf alice, prr 0 0), (pidOf bob, prr 0 1), (pidOf charlie, prr 0 0)]
-                    , Map.fromList [(pidOf alice, prr 1 0), (pidOf bob, prr 0 0), (pidOf charlie, prr 1 1)]
-                    , Map.fromList [(pidOf alice, prr 3 3), (pidOf bob, prr 0 0), (pidOf charlie, prr 1 0)]
+      let results = [ Map.fromList [(alice, rr 0 0), (bob, rr 0 1), (charlie, rr 0 0)]
+                    , Map.fromList [(alice, rr 1 0), (bob, rr 0 0), (charlie, rr 1 1)]
+                    , Map.fromList [(alice, rr 3 3), (bob, rr 0 0), (charlie, rr 1 0)]
                     ]
 
       let rules = ProgressiveScoring 10 (-1)
-      scoresFor rules results `shouldBe` Map.fromList [(pidOf alice, 28),
-                                                       (pidOf bob, 19),
-                                                       (pidOf charlie, 20)]
+      scoresFor rules results `shouldBe` Map.fromList [(alice, 28),
+                                                       (bob, 19),
+                                                       (charlie, 20)]
 
 dealingSpec :: Spec
 dealingSpec = describe "Dealing" $ do
@@ -91,11 +90,11 @@ dealingSpec = describe "Dealing" $ do
 
     it "supports bid busting" $ do
       let dealer = RikikiDealingFor 3
-      validBids dealer 4 [(pidOf alice, 0), (pidOf bob, 1)] `shouldBe` Set.fromList [0, 1, 2, 4]
+      validBids dealer 4 [(alice, 0), (bob, 1)] `shouldBe` Set.fromList [0, 1, 2, 4]
 
 
 biddingSpec :: Spec
-biddingSpec = describe "Dealing and bidding for a round" $ do
+biddingSpec = describe "Dealing and bidding for a round" $
     it "should return the right number of results" $ do
       let dealer = RikikiDealingFor 3
       let playerHands = NonEmpty.fromList
@@ -115,7 +114,7 @@ strategySpec = describe "RandomStrategy" $
       let numCards = 4
       let cards = NonEmpty.fromList $ take numCards fullDeck
       let trumps = Nothing
-      bid <- chooseBid player dealer trumps [(pidOf bob, 2), (pidOf charlie, 1)] (Hand cards)
+      bid <- chooseBid player dealer trumps [(bob, 2), (charlie, 1)] (Hand cards)
       bid `shouldSatisfy` (<= numCards)
       bid `shouldSatisfy` (>= 0)
       bid `shouldSatisfy` (/= 1)

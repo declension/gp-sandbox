@@ -28,24 +28,31 @@ playGame :: (DealerRules d, ScorerRules s, MonadRandom m, Player p)
             -> s
             -> NonEmpty p
             -> Deck
-            -> WriterT Log (StateT Results m) ()
+            -> WriterT Log (StateT (ResultsFor p) m) ()
 playGame dealerRules scorerRules players startDeck = do
   results <- get
   let roundNo = List.length results + 1
   let cardsThisRound = numCardsForRound dealerRules roundNo
   unless (cardsThisRound == 0) $ do
+    -- Deal cards
     let top : deck = startDeck
-    let numPlayers = NonEmpty.length players
     let trumps = Just (toSuit top)
+    let numPlayers = NonEmpty.length players
     tell $ printf "----- Round: #%02d. Cards: %02d. Trumps: %s -----\n" roundNo cardsThisRound $ (show . toSuit) top
     let (playerHands, deck') = dealPlayerHands cardsThisRound deck players
     tell $ printf "Dealt: %s\n" $ show playerHands
 
+    -- Bid
     bidResults <- bidOnRound dealerRules cardsThisRound trumps playerHands
     tell $ printf "Bids are: %s\n" (show bidResults)
 
+    -- Play trick
     let roundResults = fakeResultsFor bidResults
+
+    -- Store results
     put $ roundResults : results
+
+    -- Recurse!
     playGame dealerRules scorerRules players deck
 
 shuffledDeck :: (MonadRandom m)
@@ -80,22 +87,22 @@ bidOnRound :: (DealerRules d, MonadRandom m, Player p)
            -> NumCards
            -> Maybe Suit
            -> NonEmpty (p, Hand)
-           -> m PlayerBids
+           -> m (BidsFor p)
 bidOnRound dr n tr phs = bidOnRound' dr n tr (NonEmpty.toList phs) []
 
 bidOnRound' :: (DealerRules d, MonadRandom m, Player p)
             => d
             -> NumCards
             -> Maybe Suit
-            -> [(p, Hand)]
-            -> PlayerBids
-            -> m PlayerBids
+            -> HandsFor p
+            -> BidsFor p
+            -> m (BidsFor p)
 bidOnRound' _ _ _ [] bidsSoFar = return bidsSoFar
 bidOnRound' dealerRules cardsThisRound trumps playerHands bidsSoFar = do
     let (p, hand) : ps = playerHands
     newBid <- chooseBid p dealerRules trumps bidsSoFar hand
-    bidOnRound' dealerRules cardsThisRound trumps ps (bidsSoFar ++ [(getPlayerId p, newBid)])
+    bidOnRound' dealerRules cardsThisRound trumps ps (bidsSoFar ++ [(p, newBid)])
 
 -- | Some fake results, whilst we don't have actual game logic...
-fakeResultsFor :: PlayerBids -> RoundResults
-fakeResultsFor playerBids = Map.fromList $ second (\b -> PlayerRoundResult {handBid=b, handTaken=0}) <$> playerBids
+fakeResultsFor :: (Player p) => BidsFor p -> RoundResultsBy p
+fakeResultsFor playerBids = Map.fromList $ second (\b -> RoundResult {handBid=b, handTaken=0}) <$> playerBids

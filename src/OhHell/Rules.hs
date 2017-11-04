@@ -9,12 +9,12 @@ import qualified Data.List as List
 
 
 class ScorerRules a where
-  scoreForPlayerRound :: a -> PlayerRoundResult -> Score
+  scoreForPlayerRound :: a -> RoundResult -> Score
 
 data ProgressiveScoring = ProgressiveScoring {flatBonus :: Int, penaltyFactor :: Int}
 
 instance ScorerRules ProgressiveScoring where
-  scoreForPlayerRound sr (PlayerRoundResult bid taken)
+  scoreForPlayerRound sr (RoundResult bid taken)
    | bid == taken = flatBonus sr + bid * bid
    | otherwise    = penaltyFactor sr * abs (bid - taken)
 
@@ -36,7 +36,7 @@ class DealerRules dr where
   -- | What are all the valid bids given the previous bids
   validBids :: dr
             -> NumCards
-            -> PlayerBids
+            -> BidsFor p
             -> Set Bid
   validBids rules numCards bids
     | numCards <= 0 = Set.empty
@@ -59,10 +59,10 @@ instance DealerRules RikikiDealing where
 
 
 -- | Generate scores given some rules and some results
-scoresFor :: ScorerRules r
+scoresFor :: (Ord p, ScorerRules r)
           => r
-          -> Results
-          -> Scores
+          -> ResultsFor p
+          -> ScoresBy p
 scoresFor rules results = unionsWith (+) roundScores
   where roundScores = fmap scoresFromResults results
         scoresFromResults = fmap (scoreForPlayerRound rules)

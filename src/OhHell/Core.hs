@@ -27,24 +27,28 @@ instance Show Hand where
 handOf :: [PlayingCard] -> Hand
 handOf lst = Hand $ NonEmpty.fromList lst
 
-data PlayerRoundResult = PlayerRoundResult
+data RoundResult = RoundResult
   { handBid :: Bid
   , handTaken :: Taken
   } deriving (Eq, Ord)
 
-instance Show PlayerRoundResult where
-  show (PlayerRoundResult bid taken) = printf "{bid:%d, got:%d}" bid taken
+instance Show RoundResult where
+  show (RoundResult bid taken) = printf "{bid:%d, got:%d}" bid taken
 
 -- | The results round-by-round, broken down by player
 type PlayerId = String
 
-type RoundResults = Map PlayerId PlayerRoundResult
+type RoundResultsBy p = Map p RoundResult
 
-type Results = [RoundResults]
+type ResultsFor p = [RoundResultsBy p]
 
-type Scores = Map PlayerId Score
+type ScoresBy p = Map p Score
 
-type PlayerBids = [(PlayerId, Bid)]
+type BidsFor p = [(p, Bid)]
+
+type CardsFor p = [(p, PlayingCard)]
+
+type HandsFor p = [(p, Hand)]
 
 -- Some aliases for readability
 type Deck = [PlayingCard]
