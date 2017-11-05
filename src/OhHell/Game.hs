@@ -56,11 +56,12 @@ playGame dealerRules scorerRules players startDeck = do
     tell $ printf "Dealt: %s\n" $ show playerHands
 
     -- Bid
-    bidResults <- bidOnRound dealerRules cardsThisRound trumps playerHands
+    bidResults <- bidOnRound dealerRules trumps playerHands
     tell $ printf "Bids are: %s\n" (show bidResults)
 
     -- Play trick
     let roundResults = fakeResultsFor bidResults
+--    roundResults <- playRound dealerRules trumps playerHands
 
     -- Store results
     put $ roundResults : results
@@ -100,24 +101,23 @@ dealPlayerHands numCards deck (pl :| ps) = ((pl, hand) <| rest, deck'')
 -- | All players bid for a round
 bidOnRound :: (DealerRules d, MonadRandom m, Player p)
            => d
-           -> NumCards
            -> Maybe Suit
            -> NonEmpty (p, Hand)
            -> m (BidsFor p)
-bidOnRound dr n tr phs = bidOnRound' dr n tr (NonEmpty.toList phs) []
+bidOnRound dr tr phs = bidOnRound' dr tr (NonEmpty.toList phs) []
 
 bidOnRound' :: (DealerRules d, MonadRandom m, Player p)
             => d
-            -> NumCards
             -> Maybe Suit
             -> HandsFor p
             -> BidsFor p
             -> m (BidsFor p)
-bidOnRound' _ _ _ [] bidsSoFar = return bidsSoFar
-bidOnRound' dealerRules cardsThisRound trumps playerHands bidsSoFar = do
-    let (p, hand) : ps = playerHands
-    newBid <- chooseBid p dealerRules trumps bidsSoFar hand
-    bidOnRound' dealerRules cardsThisRound trumps ps (bidsSoFar ++ [(p, newBid)])
+bidOnRound' _ _ [] bidsSoFar = return bidsSoFar
+bidOnRound' dealerRules trumps playerHands bidsSoFar = do
+    let (p, Hand hand) : ps = playerHands
+        cardsThisRound = NonEmpty.length hand
+    newBid <- chooseBid p dealerRules trumps bidsSoFar (Hand hand)
+    bidOnRound' dealerRules trumps ps (bidsSoFar ++ [(p, newBid)])
 
 -- | Some fake results, whilst we don't have actual game logic...
 fakeResultsFor :: (Player p) => BidsFor p -> RoundResultsBy p

@@ -104,7 +104,7 @@ biddingSpec = describe "Dealing and bidding for a round" $
                          (bob, handOf []),
                          (charlie, handOf [])] :: NonEmpty (RandomBidder, Hand)
       let g = mkStdGen 0
-      let results = evalRand (bidOnRound dealer 2 Nothing playerHands) g
+      let results = evalRand (bidOnRound dealer Nothing playerHands) g
       List.length results `shouldBe` 3
 
 
@@ -130,7 +130,6 @@ integrationSpec = describe "PlayGame" $
           players = NonEmpty.fromList [alice, bob, charlie]
           deck = fullDeck
           gen = mkStdGen 0
-          expected = [Map.fromList [(alice, 1), (bob, 3), (charlie, 4)]]
       let (log, results) = evalRand (runGame dealer scorer players deck) gen
 
       log `shouldContain` "Round: #01"
