@@ -27,6 +27,8 @@ class DealerRules dr where
   -- | Number of players in this rule set
   numPlayers :: dr -> NumPlayers
 
+  numRounds :: dr -> NumRounds
+
   -- | Number of cards to deal in the given round
   numCardsForRound :: dr -> RoundNum -> NumCards
 
@@ -50,9 +52,12 @@ newtype RikikiDealing = RikikiDealingFor NumPlayers
 
 instance DealerRules RikikiDealing where
   numPlayers (RikikiDealingFor n) = n
+
+  numRounds dr = 2 * (51 `div` numPlayers dr) + 1
+
   numCardsForRound dr roundNum = (up ++ maxRoundSize : down ++ zeros) List.!! (roundNum - 1)
                     where maxRoundSize = 51 `div` numPlayers dr
-                          up = [1..maxRoundSize-1]
+                          up = [1..maxRoundSize - 1]
                           down = List.reverse up
                           zeros = List.repeat 0
   bidBusting dr = True

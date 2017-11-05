@@ -61,6 +61,8 @@ type Score = Int
 
 type RoundNum = Int
 
+type NumRounds = Int
+
 type NumCards = Int
 
 type NumPlayers = Int

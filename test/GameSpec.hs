@@ -71,9 +71,10 @@ dealingSpec = describe "Dealing" $ do
       let dealer = RikikiDealingFor 5
       numCardsForRound dealer 1 `shouldBe` 1
       numCardsForRound dealer 2 `shouldBe` 2
-      numCardsForRound dealer 5 `shouldBe` 5
+      numCardsForRound dealer 9 `shouldBe` 9
       numCardsForRound dealer 10 `shouldBe` 10
       numCardsForRound dealer 11 `shouldBe` 9
+      numCardsForRound dealer 19 `shouldBe` 1
 
     it "deals 0 eventually and forever" $ do
       let dealer = RikikiDealingFor 8
