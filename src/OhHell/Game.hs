@@ -8,8 +8,8 @@ import           OhHell.Rules
 import           OhHell.Strategies
 import           OhHell.Player
 import           Control.Monad.Random (MonadRandom)
-import           Control.Monad.Writer (WriterT,tell)
-import           Control.Monad.State (StateT,put,get)
+import           Control.Monad.Writer (WriterT,tell,execWriterT)
+import           Control.Monad.State (StateT,put,get,runStateT)
 import qualified Data.List.NonEmpty as NonEmpty
 import           Data.List.NonEmpty (NonEmpty, NonEmpty((:|)), (<|))
 
@@ -22,7 +22,20 @@ import           Game.Implement.Card.Standard (PlayingCard,Suit,toSuit)
 import           Game.Implement.Card (fullDeck,shuffle)
 import           System.Random.Shuffle (shuffleM)
 
--- Play a round of the game
+
+-- | Run an entire game from start to finish
+runGame :: (Player p, MonadRandom m, DealerRules d, ScorerRules s)
+        => d
+        -> s
+        -> NonEmpty p
+        -> Deck
+        -> m (Log, ResultsFor p)
+runGame dealingRules scoringRules players deck = runStateT (execWriterT playConfiguredGame) initialResults
+  where playConfiguredGame = playGame dealingRules scoringRules players deck
+        initialResults = []
+
+
+-- | Play a round of the game
 playGame :: (DealerRules d, ScorerRules s, MonadRandom m, Player p)
             => d
             -> s
@@ -55,6 +68,8 @@ playGame dealerRules scorerRules players startDeck = do
     -- Recurse!
     playGame dealerRules scorerRules players deck
 
+
+-- | Return a new shuffled deck
 shuffledDeck :: (MonadRandom m)
              => m Deck
 shuffledDeck = shuffleM fullDeck
@@ -66,6 +81,7 @@ dealHand :: NumCards
 dealHand numCards deck = (hand, newDeck)
       where hand = Hand $ NonEmpty.fromList $ take numCards deck
             newDeck = drop numCards deck
+
 
 -- | Deal a hand of specified size to each player in the non-empty list given
 -- Returns a non-empty list of tuples of players and their hand, plus the leftover deck

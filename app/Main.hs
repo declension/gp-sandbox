@@ -1,11 +1,11 @@
 module Main where
 
-import Prelude ()
+import Prelude (putStrLn)
 import ClassyPrelude hiding (last, putStrLn)
 
 import OhHell.Rules
 import OhHell.Strategies (RandomBidder(RandomBidder))
-import OhHell.Game (playGame, shuffledDeck)
+import OhHell.Game (shuffledDeck, runGame)
 
 import GP (myFitness, eval)
 import GenProg
@@ -15,8 +15,6 @@ import Text.Printf (printf)
 import qualified Data.List.NonEmpty as NonEmpty
 import Data.List.NonEmpty (NonEmpty)
 
-import Control.Monad.State (StateT, execStateT,evalStateT,runStateT)
-import qualified Prelude
 import Data.List (last)
 import Control.Monad.Writer (WriterT, runWriterT,execWriterT)
 import Game.Implement.Card (fullDeck)
@@ -46,6 +44,6 @@ main = do
   let scoringRules = ProgressiveScoring 10 (-1)
   let dealingRules = RikikiDealingFor (NonEmpty.length players)
   deck <- shuffledDeck
-  (log, finalResults) <- runStateT (execWriterT (playGame dealingRules scoringRules players deck)) []
-  Prelude.putStrLn log
-  Prelude.putStrLn $ "Scores are:" ++ show (scoresFor scoringRules finalResults)
+  (log, finalResults) <- runGame dealingRules scoringRules players deck
+  putStrLn log
+  putStrLn $ "Scores are:" ++ show (scoresFor scoringRules finalResults)

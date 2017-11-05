@@ -7,7 +7,7 @@ import OhHell.Core
 import OhHell.Rules
 import OhHell.Player
 import OhHell.Strategies (RandomBidder(RandomBidder))
-
+import OhHell.Game (bidOnRound,playGame, runGame)
 
 import Test.Hspec
 import qualified Data.List as List
@@ -15,10 +15,10 @@ import qualified Data.List.NonEmpty as NonEmpty (fromList)
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import Control.Monad.State (execState)
+import Control.Monad.State (execState,runStateT)
 import Control.Monad.Random (mkStdGen,evalRandT,evalRand)
-import OhHell.Game (bidOnRound)
 import Game.Implement.Card (fullDeck)
+import Control.Monad.Writer (execWriterT)
 
 spec :: Spec
 spec = do
@@ -27,6 +27,7 @@ spec = do
   scoringSpec
   biddingSpec
   strategySpec
+  integrationSpec
 
 alice = RandomBidder "Alice"
 bob = RandomBidder "Bob"
@@ -119,3 +120,17 @@ strategySpec = describe "RandomStrategy" $
       bid `shouldSatisfy` (>= 0)
       bid `shouldSatisfy` (/= 1)
 
+
+integrationSpec :: Spec
+integrationSpec = describe "PlayGame" $
+    it "plays a whole game out" $ do
+      let dealer = RikikiDealingFor 3
+          scorer = ProgressiveScoring {flatBonus = 10, penaltyFactor = -1}
+          players = NonEmpty.fromList [alice, bob, charlie]
+          deck = fullDeck
+          gen = mkStdGen 0
+          expected = [Map.fromList [(alice, 1), (bob, 3), (charlie, 4)]]
+      let (log, results) = evalRand (runGame dealer scorer players deck) gen
+
+      log `shouldContain` "Round: #01"
+      length results `shouldBe` 16 * 2 + 1
