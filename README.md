@@ -4,7 +4,7 @@ Genetic Programming sandbox
 
 Small experiments with Genetic Programming using the [GenProg](http://hackage.haskell.org/package/genprog) library.
 
-As this project progresses, it may take influence from my previous [Java-based card-playing evolution experiment](https://github.com/declension/OhHellStrategyEvolution/), with a view to using the increased power and brevity of functional programming / Haskell (specifically [Higher Order Functions](https://wiki.haskell.org/HOF) and [Algebraic data types](https://wiki.haskell.org/Algebraic_data_type))
+This is influenced by my previous [Java-based card-playing evolution experiment](https://github.com/declension/OhHellStrategyEvolution/), with a view to using the increased power and brevity of functional programming / Haskell (specifically [Higher Order Functions](https://wiki.haskell.org/HOF) and [Algebraic data types](https://wiki.haskell.org/Algebraic_data_type))
 
 Project setup
 -------------
@@ -21,4 +21,11 @@ stack build
 ### Running
 ```bash
 stack exec gp-sandbox
+```
+
+
+### Tests
+The `HSpec` unit tests are run thus:
+```bash
+stack test
 ```
