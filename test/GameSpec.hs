@@ -7,7 +7,7 @@ import OhHell.Core
 import OhHell.Rules
 import OhHell.Player
 import OhHell.Strategies (RandomBidder(RandomBidder))
-import OhHell.Game (bidOnRound,playGame, runGame)
+import OhHell.Game (bidOnRound,playGame, runGame,playRound)
 
 import Test.Hspec
 import qualified Data.List as List
@@ -19,6 +19,7 @@ import Control.Monad.State (execState,runStateT)
 import Control.Monad.Random (mkStdGen,evalRandT,evalRand)
 import Game.Implement.Card (fullDeck)
 import Control.Monad.Writer (execWriterT)
+import Game.Implement.Card.Standard
 
 spec :: Spec
 spec = do
@@ -27,6 +28,7 @@ spec = do
   scoringSpec
   biddingSpec
   strategySpec
+  roundPlayingSpec
   integrationSpec
 
 alice = RandomBidder "Alice"
@@ -120,6 +122,23 @@ strategySpec = describe "RandomStrategy" $
       bid `shouldSatisfy` (<= numCards)
       bid `shouldSatisfy` (>= 0)
       bid `shouldSatisfy` (/= 1)
+
+
+roundPlayingSpec :: Spec
+roundPlayingSpec = describe "Playing a round" $
+    it "plays a whole round" $ do
+        let dealer = RikikiDealingFor 3
+            player = alice
+            numCards = 1
+            cards = NonEmpty.fromList $ take numCards (fullDeck :: [PlayingCard])
+            trumps = Nothing
+            bids = [(alice, 1), (bob, 1), (charlie, 0)]
+            hands = NonEmpty.fromList [(alice, handOf [Four ## Spades]),
+                                       (bob, handOf [Jack ## Diamonds]),
+                                       (charlie, handOf [Queen ## Hearts])]
+        cards <- playRound dealer trumps bids hands
+        length cards `shouldBe` 3
+        cards `shouldBe` [(alice, Four ## Spades), (bob, Jack ## Diamonds), (charlie, Queen ## Hearts)]
 
 
 integrationSpec :: Spec

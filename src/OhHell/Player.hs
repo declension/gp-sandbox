@@ -30,9 +30,10 @@ class (Show p, Eq p, Ord p) => Player p where
   chooseCard :: (DealerRules d, MonadRandom m)
              => p
              -> d               -- ^ Rules of the game
-             -> NonEmpty [(p, Bid)] -- ^ What has been bid
-             -> CardsFor p      -- ^ What has been played so far this hand
+             -> Maybe Suit      -- ^ Trumps if any
+             -> BidsFor p       -- ^ What has been bid
              -> Hand            -- ^ (What remains of) the player's hand
+             -> CardsFor p      -- ^ What has been played so far this hand
              -> m PlayingCard   -- ^ The chosen card
 
 

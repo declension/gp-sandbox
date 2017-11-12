@@ -25,6 +25,6 @@ instance Player RandomBidder where
     rnd <- getRandomR (0, List.length options - 1)
     return $ options List.!! rnd
 
-  chooseCard player dealerRules bids played (Hand hand) = do
+  chooseCard player dealerRules trumps bids (Hand hand) played = do
     rnd <- getRandomR (0, NonEmpty.length hand - 1)
     return $ hand NonEmpty.!! rnd

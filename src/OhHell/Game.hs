@@ -56,12 +56,14 @@ playGame dealerRules scorerRules players startDeck = do
     tell $ printf "Dealt: %s\n" $ show playerHands
 
     -- Bid
-    bidResults <- bidOnRound dealerRules trumps playerHands
-    tell $ printf "Bids are: %s\n" (show bidResults)
+    bids <- bidOnRound dealerRules trumps playerHands
+    tell $ printf "Bids are: %s\n" (show bids)
 
     -- Play trick
-    let roundResults = fakeResultsFor bidResults
---    roundResults <- playRound dealerRules trumps playerHands
+    cardsPlayed <- playRound dealerRules trumps bids playerHands
+    tell $ printf "Played: %s\n" (show cardsPlayed)
+    --let roundResults = scoreCards cardsPlayed
+    let roundResults = fakeResultsFor bids
 
     -- Store results
     put $ roundResults : results
@@ -118,6 +120,31 @@ bidOnRound' dealerRules trumps playerHands bidsSoFar = do
         cardsThisRound = NonEmpty.length hand
     newBid <- chooseBid p dealerRules trumps bidsSoFar (Hand hand)
     bidOnRound' dealerRules trumps ps (bidsSoFar ++ [(p, newBid)])
+
+
+-- | Play a whole round for each of the passed players
+playRound :: (DealerRules d, MonadRandom m, Player p)
+            => d
+            -> Maybe Suit
+            -> BidsFor p
+            -> NonEmpty (p, Hand)
+            -> m (CardsFor p)
+playRound dealerRules trumps bids playerHands = playRound' dealerRules trumps bids (NonEmpty.toList playerHands) []
+
+-- | Internal implementation
+playRound' :: (DealerRules d, MonadRandom m, Player p)
+            => d
+            -> Maybe Suit
+            -> BidsFor p
+            -> HandsFor p
+            -> CardsFor p
+            -> m (CardsFor p)
+playRound' _ _ _ [] cardsSoFar = return cardsSoFar
+playRound' dealerRules trumps bids playerHands cardsSoFar = do
+    let (p, Hand hand) : phs = playerHands
+        cardsThisRound = NonEmpty.length hand
+    newCard <- chooseCard p dealerRules trumps bids (Hand hand) cardsSoFar
+    playRound' dealerRules trumps bids phs (cardsSoFar ++ [(p, newCard)])
 
 -- | Some fake results, whilst we don't have actual game logic...
 fakeResultsFor :: (Player p) => BidsFor p -> RoundResultsBy p
