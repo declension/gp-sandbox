@@ -20,11 +20,11 @@ instance Player RandomBidder where
   getPlayerName (RandomBidder pid) = pid
 
   chooseBid player dealerRules trumps bidsSoFar (Hand cards) = do
-    let cardsThisRound = NonEmpty.length cards
+    let cardsThisRound = Set.size cards
     let options = Set.toList $ validBids dealerRules cardsThisRound bidsSoFar
     rnd <- getRandomR (0, List.length options - 1)
     return $ options List.!! rnd
 
   chooseCard player dealerRules trumps bids (Hand hand) played = do
-    rnd <- getRandomR (0, NonEmpty.length hand - 1)
-    return $ hand NonEmpty.!! rnd
+    rnd <- getRandomR (0, Set.size hand - 1)
+    return $ Set.toList hand List.!! rnd

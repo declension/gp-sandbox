@@ -60,10 +60,9 @@ playGame dealerRules scorerRules players startDeck = do
     tell $ printf "Bids are: %s\n" (show bids)
 
     -- Play trick
-    cardsPlayed <- playRound dealerRules trumps bids playerHands
+    (cardsPlayed, newPlayerHands) <- playTrick dealerRules trumps bids playerHands
     tell $ printf "Played: %s\n" (show cardsPlayed)
-    --let roundResults = scoreCards cardsPlayed
-    let roundResults = fakeResultsFor bids
+    let roundResults = roundResultFor trumps bids cardsPlayed
 
     -- Store results
     put $ roundResults : results
@@ -71,6 +70,16 @@ playGame dealerRules scorerRules players startDeck = do
     -- Recurse!
     playGame dealerRules scorerRules players deck
 
+
+-- | Work out who won the trick, and give results accordingly
+roundResultFor :: (Player p)
+               => Maybe Suit
+               -> BidsFor p
+               -> CardsFor p
+               -> RoundResultsBy p
+roundResultFor trumps bids playerCards @ ((p, leadCard):pcs) = Map.fromList $ rrf <$> zip bids playerCards
+    where rrf ((p, bid), (p', card)) = (p, RoundResult {handBid=bid, handTaken=0})
+          leadSuit = toSuit leadCard
 
 -- | Return a new shuffled deck
 shuffledDeck :: (MonadRandom m)
@@ -82,7 +91,7 @@ dealHand :: NumCards
          -> Deck
          -> (Hand, Deck)
 dealHand numCards deck = (hand, newDeck)
-      where hand = Hand $ NonEmpty.fromList $ take numCards deck
+      where hand = Hand $ Set.fromList $ take numCards deck
             newDeck = drop numCards deck
 
 
@@ -100,6 +109,11 @@ dealPlayerHands numCards deck (pl :| ps) = ((pl, hand) <| rest, deck'')
            (rest, deck'') = recurse deck' (NonEmpty.fromList ps)
            recurse = dealPlayerHands numCards
 
+-- | Is the round finished, in any way
+finished :: (Player p) => HandsFor p -> Bool
+finished [] = True
+finished ((p, Hand hand) : _) = Set.null hand
+
 -- | All players bid for a round
 bidOnRound :: (DealerRules d, MonadRandom m, Player p)
            => d
@@ -108,6 +122,7 @@ bidOnRound :: (DealerRules d, MonadRandom m, Player p)
            -> m (BidsFor p)
 bidOnRound dr tr phs = bidOnRound' dr tr (NonEmpty.toList phs) []
 
+-- | Internal recursive version
 bidOnRound' :: (DealerRules d, MonadRandom m, Player p)
             => d
             -> Maybe Suit
@@ -117,35 +132,71 @@ bidOnRound' :: (DealerRules d, MonadRandom m, Player p)
 bidOnRound' _ _ [] bidsSoFar = return bidsSoFar
 bidOnRound' dealerRules trumps playerHands bidsSoFar = do
     let (p, Hand hand) : ps = playerHands
-        cardsThisRound = NonEmpty.length hand
+        cardsThisRound = Set.size hand
     newBid <- chooseBid p dealerRules trumps bidsSoFar (Hand hand)
     bidOnRound' dealerRules trumps ps (bidsSoFar ++ [(p, newBid)])
 
-
--- | Play a whole round for each of the passed players
+-- | Play a complete round of tricks for each of the passed players for each of their cards
 playRound :: (DealerRules d, MonadRandom m, Player p)
             => d
             -> Maybe Suit
             -> BidsFor p
             -> NonEmpty (p, Hand)
-            -> m (CardsFor p)
-playRound dealerRules trumps bids playerHands = playRound' dealerRules trumps bids (NonEmpty.toList playerHands) []
+            -> m (RoundResultsBy p)
+playRound dealerRules trumps bids playerHands = trace ("Playing round of " ++ show playerHands) $ fmap Map.fromList results
+    where results = playRound' dealerRules trumps bids (NonEmpty.toList playerHands) Map.empty
 
--- | Internal implementation
+-- | Internal recursive implementation
 playRound' :: (DealerRules d, MonadRandom m, Player p)
+           => d
+           -> Maybe Suit
+           -> BidsFor p
+           -> HandsFor p
+           -> TakenBy p
+           -> m (RoundResultsFor p)
+playRound' dealerRules trumps bids playerHands taken
+  | finished playerHands = trace ("Finished round! Tricks taken: " ++ show taken) return $ map zipper bids
+  | otherwise            = do
+    trace ("Hands:" ++ show playerHands) return ()
+    (trick, newHands) <- playTrick' dealerRules trumps bids playerHands ([], [])
+    -- TODO: calculate actual winner from cards
+    let (winner, _) = List.head playerHands
+    trace (show winner ++ " won") pure ()
+    playRound' dealerRules trumps bids newHands (Map.alter inc winner taken)
+    where inc Nothing  = Just 1
+          inc (Just x) = Just (x + 1)
+          zipper (p, bid) = (p, RoundResult {handTaken = fromMaybe 0 (Map.lookup p taken), handBid = bid})
+
+
+-- | Play a single trick for each of the passed players
+playTrick :: (DealerRules d, MonadRandom m, Player p)
+            => d
+            -> Maybe Suit
+            -> BidsFor p
+            -> NonEmpty (p, Hand)
+            -> m (CardsFor p, HandsFor p)
+playTrick dealerRules trumps bids playerHands
+    = playTrick' dealerRules trumps bids (NonEmpty.toList playerHands) ([], [])
+
+-- | Internal recursive implementation
+-- Mutates the playerHands across iterations building up (cards, hands) state that starts empty.
+-- An empty playerHands terminates the recursion
+playTrick' :: (DealerRules d, MonadRandom m, Player p)
             => d
             -> Maybe Suit
             -> BidsFor p
             -> HandsFor p
-            -> CardsFor p
-            -> m (CardsFor p)
-playRound' _ _ _ [] cardsSoFar = return cardsSoFar
-playRound' dealerRules trumps bids playerHands cardsSoFar = do
+            -> (CardsFor p, HandsFor p)
+            -> m (CardsFor p, HandsFor p)
+playTrick' dealerRules trumps bids playerHands (cardsSoFar, handsSoFar)
+  | finished playerHands = return (cardsSoFar, handsSoFar)
+  | otherwise            = do
     let (p, Hand hand) : phs = playerHands
-        cardsThisRound = NonEmpty.length hand
-    newCard <- chooseCard p dealerRules trumps bids (Hand hand) cardsSoFar
-    playRound' dealerRules trumps bids phs (cardsSoFar ++ [(p, newCard)])
+        cardsThisRound = Set.size hand
+    chosenCard <- chooseCard p dealerRules trumps bids (Hand hand) cardsSoFar
+    trace (show p ++ " played " ++ show chosenCard) pure ()
+    let newCardsSoFar = cardsSoFar ++ [(p, chosenCard)]
+        newHandsSoFar = handsSoFar ++ [(p, Hand newHand)]
+        newHand = Set.delete chosenCard hand
+    playTrick' dealerRules trumps bids phs (newCardsSoFar, newHandsSoFar)
 
--- | Some fake results, whilst we don't have actual game logic...
-fakeResultsFor :: (Player p) => BidsFor p -> RoundResultsBy p
-fakeResultsFor playerBids = Map.fromList $ second (\b -> RoundResult {handBid=b, handTaken=0}) <$> playerBids

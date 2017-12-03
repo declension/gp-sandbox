@@ -7,7 +7,7 @@ import OhHell.Core
 import OhHell.Rules
 import OhHell.Player
 import OhHell.Strategies (RandomBidder(RandomBidder))
-import OhHell.Game (bidOnRound,playGame, runGame,playRound)
+import OhHell.Game (bidOnRound,playGame, runGame,playRound,playTrick)
 
 import Test.Hspec
 import qualified Data.List as List
@@ -28,6 +28,7 @@ spec = do
   scoringSpec
   biddingSpec
   strategySpec
+  trickPlayingSpec
   roundPlayingSpec
   integrationSpec
 
@@ -116,7 +117,7 @@ strategySpec = describe "RandomStrategy" $
       let dealer = RikikiDealingFor 3
       let player = alice
       let numCards = 4
-      let cards = NonEmpty.fromList $ take numCards fullDeck
+      let cards = Set.fromList $ take numCards fullDeck
       let trumps = Nothing
       bid <- chooseBid player dealer trumps [(bob, 2), (charlie, 1)] (Hand cards)
       bid `shouldSatisfy` (<= numCards)
@@ -126,9 +127,24 @@ strategySpec = describe "RandomStrategy" $
 
 roundPlayingSpec :: Spec
 roundPlayingSpec = describe "Playing a round" $
-    it "plays a whole round" $ do
+    it "gives correct results" $ do
         let dealer = RikikiDealingFor 3
-            player = alice
+            numCards = 2
+            cards = NonEmpty.fromList $ take numCards (fullDeck :: [PlayingCard])
+            trumps = Nothing
+            bids = [(alice, 1), (bob, 2), (charlie, 0)]
+            hands = NonEmpty.fromList [(alice, handOf [Four ## Spades, Seven ## Diamonds]),
+                                       (bob, handOf [Jack ## Diamonds, Three ## Clubs]),
+                                       (charlie, handOf [Queen ## Hearts, Four ## Diamonds])]
+        results <- playRound dealer trumps bids hands
+        length results `shouldBe` 3
+        -- TODO: test real results (currently first player always wins)
+        results `shouldBe` Map.fromList [(alice, rr 1 2), (bob, rr 2 0), (charlie, rr 0 0)]
+
+trickPlayingSpec :: Spec
+trickPlayingSpec = describe "Playing a trick" $
+    it "removes played cards from hands" $ do
+        let dealer = RikikiDealingFor 3
             numCards = 1
             cards = NonEmpty.fromList $ take numCards (fullDeck :: [PlayingCard])
             trumps = Nothing
@@ -136,9 +152,12 @@ roundPlayingSpec = describe "Playing a round" $
             hands = NonEmpty.fromList [(alice, handOf [Four ## Spades]),
                                        (bob, handOf [Jack ## Diamonds]),
                                        (charlie, handOf [Queen ## Hearts])]
-        cards <- playRound dealer trumps bids hands
+        (cards, hands) <- playTrick dealer trumps bids hands
         length cards `shouldBe` 3
         cards `shouldBe` [(alice, Four ## Spades), (bob, Jack ## Diamonds), (charlie, Queen ## Hearts)]
+        -- Check hands seem OK too
+        length hands `shouldBe` 3
+        hands `shouldBe` [(alice, emptyHand), (bob, emptyHand), (charlie, emptyHand)]
 
 
 integrationSpec :: Spec

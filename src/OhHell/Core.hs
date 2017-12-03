@@ -3,6 +3,7 @@ module OhHell.Core where
 import           Prelude ()
 import           ClassyPrelude hiding (intercalate)
 import           Data.List (intercalate)
+import qualified Data.Set as Set
 import           Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NonEmpty
 import           Data.Map (Map)
@@ -10,7 +11,7 @@ import           Game.Implement.Card.Standard (PlayingCard(PlayingCard))
 import           Text.Printf (printf)
 
 newtype Hand =
-  Hand (NonEmpty PlayingCard)
+  Hand (Set PlayingCard)
   deriving (Eq)
 
 -- | Make constructing cards prettier, e.g. @Ace ## Spades@
@@ -22,10 +23,11 @@ infix 8 ##
 instance Show Hand where
   show (Hand cards) = "{" <> intercalate ", " cardList <> "}"
     where
-      cardList = show <$> NonEmpty.toList cards
+      cardList = show <$> Set.toList cards
 
 handOf :: [PlayingCard] -> Hand
-handOf lst = Hand $ NonEmpty.fromList lst
+handOf lst = Hand $ Set.fromList lst
+emptyHand = Hand Set.empty
 
 data RoundResult = RoundResult
   { handBid :: Bid
@@ -40,11 +42,15 @@ type PlayerId = String
 
 type RoundResultsBy p = Map p RoundResult
 
+type RoundResultsFor p = [(p, RoundResult)]
+
 type ResultsFor p = [RoundResultsBy p]
 
 type ScoresBy p = Map p Score
 
-type BidsFor p = [(p, Bid)]
+type BidsFor  p = [(p, Bid)]
+type TakenFor p = [(p, Taken)]
+type TakenBy  p = Map p Taken
 
 type CardsFor p = [(p, PlayingCard)]
 
