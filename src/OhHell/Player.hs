@@ -33,7 +33,7 @@ class (Show p, Eq p, Ord p) => Player p where
              -> Maybe Suit      -- ^ Trumps if any
              -> BidsFor p       -- ^ What has been bid
              -> Hand            -- ^ (What remains of) the player's hand
-             -> CardsFor p      -- ^ What has been played so far this hand
+             -> Trick p         -- ^ What has been played so far this trick
              -> m PlayingCard   -- ^ The chosen card
 
 

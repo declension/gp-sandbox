@@ -6,8 +6,11 @@ import ClassyPrelude
 import OhHell.Core
 import qualified Data.Set as Set
 import qualified Data.List as List
+import Game.Implement.Card.Standard (Suit,toSuit,PlayingCard,toRank,PlayingCard(PlayingCard))
 
-
+-- | Rules (variations) governing scoring
+-- Notably 1. Score formula if taken tricks missed bid
+--         2. Score formula if taken tricks was exactly bid
 class ScorerRules a where
   scoreForPlayerRound :: a -> RoundResult -> Score
 
@@ -71,3 +74,22 @@ scoresFor :: (Ord p, ScorerRules r)
 scoresFor rules results = unionsWith (+) roundScores
   where roundScores = fmap scoresFromResults results
         scoresFromResults = fmap (scoreForPlayerRound rules)
+
+-- | Trick Winner
+trickWinnerFor :: Maybe Suit -> Trick p -> p
+trickWinnerFor trumps cards = recurse cards Nothing
+    where recurse [] (Just (best, _)) = ownerOf best
+          recurse ((p, card) : trick') Nothing = recurse trick' $ Just (card, toSuit card)
+          recurse ((p, card) : trick') (Just (best, leadSuit)) = recurse trick' $ Just (higherCard trumps leadSuit card best, leadSuit)
+          ownerOf card = fst $ List.head $ List.filter ((== card) . snd)  cards
+
+higherCard :: Maybe Suit -> Suit -> PlayingCard -> PlayingCard -> PlayingCard
+higherCard (Just trumps) leadSuit a@(PlayingCard ar as) b@(PlayingCard br bs)
+  | as == bs            = if ar > br then a else b
+  | as == trumps        = a
+  | bs == trumps        = b
+  | otherwise           = higherCard Nothing leadSuit a b
+higherCard Nothing leadSuit a@(PlayingCard ar as) b@(PlayingCard br bs)
+  | as == leadSuit && bs /= leadSuit = a
+  | bs == leadSuit && as /= leadSuit = b
+  | otherwise                        = if ar > br then a else b

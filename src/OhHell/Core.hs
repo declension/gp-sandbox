@@ -53,6 +53,7 @@ type TakenFor p = [(p, Taken)]
 type TakenBy  p = Map p Taken
 
 type CardsFor p = [(p, PlayingCard)]
+type Trick p = CardsFor p
 
 type HandsFor p = [(p, Hand)]
 

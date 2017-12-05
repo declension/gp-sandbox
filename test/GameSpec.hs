@@ -24,6 +24,7 @@ import Game.Implement.Card.Standard
 spec :: Spec
 spec = do
   basicSpec
+  orderingSpec
   dealingSpec
   scoringSpec
   biddingSpec
@@ -66,6 +67,28 @@ scoringSpec = describe "Scoring" $
       scoresFor rules results `shouldBe` Map.fromList [(alice, 28),
                                                        (bob, 19),
                                                        (charlie, 20)]
+
+orderingSpec :: Spec
+orderingSpec = describe "Ordering" $ do
+    it "orders cards correcting with no trumps" $ do
+        let a = Four ## Diamonds
+            b = Five ## Diamonds
+            c = King ## Clubs
+            trumps = Nothing
+        higherCard trumps Diamonds a b `shouldBe` b
+        higherCard trumps Diamonds a c `shouldBe` a
+
+    it "orders cards correctly with trumps" $ do
+        let a = Four  ## Diamonds
+            b = Three ## Hearts
+            c = King  ## Clubs
+            d = Four  ## Hearts
+            trumps = Just Hearts
+            lead   = Diamonds
+            winner = higherCard trumps lead
+        winner a b `shouldBe` b
+        winner b d `shouldBe` d
+        winner b c `shouldBe` b
 
 dealingSpec :: Spec
 dealingSpec = describe "Dealing" $ do
@@ -138,7 +161,6 @@ roundPlayingSpec = describe "Playing a round" $
                                        (charlie, handOf [Queen ## Hearts, Four ## Diamonds])]
         results <- playRound dealer trumps bids hands
         length results `shouldBe` 3
-        -- TODO: test real results (currently first player always wins)
         results `shouldBe` Map.fromList [(alice, rr 1 2), (bob, rr 2 0), (charlie, rr 0 0)]
 
 trickPlayingSpec :: Spec

@@ -59,10 +59,9 @@ playGame dealerRules scorerRules players startDeck = do
     bids <- bidOnRound dealerRules trumps playerHands
     tell $ printf "Bids are: %s\n" (show bids)
 
-    -- Play trick
-    (cardsPlayed, newPlayerHands) <- playTrick dealerRules trumps bids playerHands
-    tell $ printf "Played: %s\n" (show cardsPlayed)
-    let roundResults = roundResultFor trumps bids cardsPlayed
+    -- Play round
+    roundResults <- playRound dealerRules trumps bids playerHands
+    tell $ printf "Round results: %s\n" (show results)
 
     -- Store results
     put $ roundResults : results
@@ -70,16 +69,6 @@ playGame dealerRules scorerRules players startDeck = do
     -- Recurse!
     playGame dealerRules scorerRules players deck
 
-
--- | Work out who won the trick, and give results accordingly
-roundResultFor :: (Player p)
-               => Maybe Suit
-               -> BidsFor p
-               -> CardsFor p
-               -> RoundResultsBy p
-roundResultFor trumps bids playerCards @ ((p, leadCard):pcs) = Map.fromList $ rrf <$> zip bids playerCards
-    where rrf ((p, bid), (p', card)) = (p, RoundResult {handBid=bid, handTaken=0})
-          leadSuit = toSuit leadCard
 
 -- | Return a new shuffled deck
 shuffledDeck :: (MonadRandom m)
@@ -157,10 +146,9 @@ playRound' :: (DealerRules d, MonadRandom m, Player p)
 playRound' dealerRules trumps bids playerHands taken
   | finished playerHands = trace ("Finished round! Tricks taken: " ++ show taken) return $ map zipper bids
   | otherwise            = do
-    trace ("Hands:" ++ show playerHands) return ()
+    trace ("Trumps are " ++ show trumps ++ ". Hands:" ++ show playerHands) return ()
     (trick, newHands) <- playTrick' dealerRules trumps bids playerHands ([], [])
-    -- TODO: calculate actual winner from cards
-    let (winner, _) = List.head playerHands
+    let winner = trickWinnerFor trumps trick
     trace (show winner ++ " won") pure ()
     playRound' dealerRules trumps bids newHands (Map.alter inc winner taken)
     where inc Nothing  = Just 1
@@ -174,7 +162,7 @@ playTrick :: (DealerRules d, MonadRandom m, Player p)
             -> Maybe Suit
             -> BidsFor p
             -> NonEmpty (p, Hand)
-            -> m (CardsFor p, HandsFor p)
+            -> m (Trick p, HandsFor p)
 playTrick dealerRules trumps bids playerHands
     = playTrick' dealerRules trumps bids (NonEmpty.toList playerHands) ([], [])
 
@@ -186,8 +174,8 @@ playTrick' :: (DealerRules d, MonadRandom m, Player p)
             -> Maybe Suit
             -> BidsFor p
             -> HandsFor p
-            -> (CardsFor p, HandsFor p)
-            -> m (CardsFor p, HandsFor p)
+            -> (Trick p, HandsFor p)
+            -> m (Trick p, HandsFor p)
 playTrick' dealerRules trumps bids playerHands (cardsSoFar, handsSoFar)
   | finished playerHands = return (cardsSoFar, handsSoFar)
   | otherwise            = do
