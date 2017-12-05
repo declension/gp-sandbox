@@ -4,6 +4,7 @@ import Prelude (putStrLn)
 import ClassyPrelude hiding (last, putStrLn)
 
 import OhHell.Rules
+import OhHell.Pretty
 import OhHell.Strategies (RandomBidder(RandomBidder))
 import OhHell.Game (shuffledDeck, runGame)
 
@@ -46,4 +47,4 @@ main = do
   deck <- shuffledDeck
   (log, finalResults) <- runGame dealingRules scoringRules players deck
   putStrLn log
-  putStrLn $ "Scores are:" ++ show (scoresFor scoringRules finalResults)
+  putStrLn $ "Scores are:" ++ prettify (scoresFor scoringRules finalResults)

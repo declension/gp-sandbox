@@ -4,13 +4,14 @@ import Prelude ()
 import ClassyPrelude
 
 import OhHell.Core
+import OhHell.Pretty
 import OhHell.Rules
 import Control.Monad.Random (MonadRandom)
 import Game.Implement.Card.Standard (Suit,PlayingCard)
 import Data.List.NonEmpty (NonEmpty)
 
 -- | The player typeclass
-class (Show p, Eq p, Ord p) => Player p where
+class (Show p, Eq p, Ord p, Pretty p) => Player p where
   -- | Return the player ID
   getPlayerId :: p -> PlayerId
 

@@ -2,6 +2,8 @@ module OhHell.Core where
 
 import           Prelude ()
 import           ClassyPrelude hiding (intercalate)
+
+import           OhHell.Pretty
 import           Data.List (intercalate)
 import qualified Data.Set as Set
 import           Data.List.NonEmpty (NonEmpty)
@@ -10,20 +12,17 @@ import           Data.Map (Map)
 import           Game.Implement.Card.Standard (PlayingCard(PlayingCard))
 import           Text.Printf (printf)
 
-newtype Hand =
-  Hand (Set PlayingCard)
-  deriving (Eq)
+newtype Hand = Hand (Set PlayingCard)
+    deriving (Eq, Show)
+
+instance Pretty Hand
+    where prettify (Hand set) = prettify set
 
 -- | Make constructing cards prettier, e.g. @Ace ## Spades@
 ( ## ) = PlayingCard
 
 infix 8 ##
 
--- Make showing Hands prettier
-instance Show Hand where
-  show (Hand cards) = "{" <> intercalate ", " cardList <> "}"
-    where
-      cardList = show <$> Set.toList cards
 
 handOf :: [PlayingCard] -> Hand
 handOf lst = Hand $ Set.fromList lst
@@ -32,10 +31,10 @@ emptyHand = Hand Set.empty
 data RoundResult = RoundResult
   { handBid :: Bid
   , handTaken :: Taken
-  } deriving (Eq, Ord)
+  } deriving (Eq, Ord, Show)
 
-instance Show RoundResult where
-  show (RoundResult bid taken) = printf "{bid:%d, got:%d}" bid taken
+instance Pretty RoundResult where
+  prettify (RoundResult bid taken) = printf "{bid %d, got %d}" bid taken
 
 -- | The results round-by-round, broken down by player
 type PlayerId = String

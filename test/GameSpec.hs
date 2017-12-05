@@ -4,6 +4,7 @@ import Prelude ()
 import ClassyPrelude
 
 import OhHell.Core
+import OhHell.Pretty
 import OhHell.Rules
 import OhHell.Player
 import OhHell.Strategies (RandomBidder(RandomBidder))
@@ -20,6 +21,7 @@ import Control.Monad.Random (mkStdGen,evalRandT,evalRand)
 import Game.Implement.Card (fullDeck)
 import Control.Monad.Writer (execWriterT)
 import Game.Implement.Card.Standard
+
 
 spec :: Spec
 spec = do
@@ -46,12 +48,18 @@ basicSpec =
       getPlayerName charlie `shouldBe` "Charlie"
 
     it "shows players nicely" $
-      show alice `shouldContain` "Alice"
+      prettify alice `shouldContain` "Alice"
 
     it "constructs HandResults " $ do
       let handResult = RoundResult 1 2
       handBid handResult `shouldBe` 1
       handTaken handResult `shouldBe` 2
+
+    it "prettifies cards" $ do
+        prettify (Five ## Hearts)   `shouldBe` "5♥"
+        prettify (Ace ## Diamonds)  `shouldBe` "A♦"
+        prettify (Jack ## Clubs)    `shouldBe` "J♣"
+        prettify (Ten ## Spades)    `shouldBe` "10♠"
 
 scoringSpec :: Spec
 scoringSpec = describe "Scoring" $

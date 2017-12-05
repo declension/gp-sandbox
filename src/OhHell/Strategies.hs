@@ -4,6 +4,7 @@ import Prelude ()
 import ClassyPrelude hiding (fromList)
 
 import OhHell.Core
+import OhHell.Pretty
 import OhHell.Player
 import OhHell.Rules
 import qualified Data.List.NonEmpty as NonEmpty
@@ -28,3 +29,6 @@ instance Player RandomBidder where
   chooseCard player dealerRules trumps bids (Hand hand) played = do
     rnd <- getRandomR (0, Set.size hand - 1)
     return $ Set.toList hand List.!! rnd
+
+instance Pretty RandomBidder
+    where prettify (RandomBidder pid) = pid
