@@ -12,23 +12,24 @@ import qualified Data.List.NonEmpty as NonEmpty
 import Control.Monad.Random (MonadRandom,getRandomR)
 import qualified Data.Set as Set
 import qualified Data.List as List
+import Data.List ((!!))
 
 
-data RandomBidder = RandomBidder PlayerId deriving (Show, Eq, Ord)
+newtype RandomBidder = RandomBidder PlayerId deriving (Show, Eq, Ord)
 
 instance Player RandomBidder where
-  getPlayerId (RandomBidder pid) = pid
-  getPlayerName (RandomBidder pid) = pid
+    getPlayerId (RandomBidder pid) = pid
+    getPlayerName (RandomBidder pid) = pid
 
-  chooseBid player dealerRules trumps bidsSoFar (Hand cards) = do
-    let cardsThisRound = Set.size cards
-    let options = Set.toList $ validBids dealerRules cardsThisRound bidsSoFar
-    rnd <- getRandomR (0, List.length options - 1)
-    return $ options List.!! rnd
+    chooseBid player dealerRules trumps bidsSoFar (Hand cards) = do
+        let cardsThisRound = Set.size cards
+        let options = Set.toList $ validBids dealerRules cardsThisRound bidsSoFar
+        rnd <- getRandomR (0, length options - 1)
+        return $ options !! rnd
 
-  chooseCard player dealerRules trumps bids (Hand hand) played = do
-    rnd <- getRandomR (0, Set.size hand - 1)
-    return $ Set.toList hand List.!! rnd
+    chooseCard player dealerRules trumps bids (Hand hand) played = do
+        rnd <- getRandomR (0, Set.size hand - 1)
+        return $ Set.toList hand !! rnd
 
 instance Pretty RandomBidder
     where prettify (RandomBidder pid) = pid
