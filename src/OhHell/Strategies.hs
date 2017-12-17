@@ -27,9 +27,11 @@ instance Player RandomBidder where
         rnd <- getRandomR (0, length options - 1)
         return $ options !! rnd
 
-    chooseCard player dealerRules trumps bids (Hand hand) played = do
-        rnd <- getRandomR (0, Set.size hand - 1)
-        return $ Set.toList hand !! rnd
+    chooseCard player dealerRules trumps bids hand played = do
+        let options = Set.toList $ validCards dealerRules played hand
+        trace ("Options: " <> prettify options) $ pure ()
+        rnd <- getRandomR (0, List.length options - 1)
+        return $ options !! rnd
 
 instance Pretty RandomBidder
     where prettify (RandomBidder pid) = pid

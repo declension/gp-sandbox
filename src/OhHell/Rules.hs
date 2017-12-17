@@ -45,10 +45,22 @@ class DealerRules dr where
             -> Set Bid
   validBids rules numCards bids
     | numCards <= 0 = Set.empty
-    | bidBusting rules && List.length bids == (numPlayers rules - 1) =  Set.difference allBids disallowed
+    | bidBusting rules && List.length bids == (numPlayers rules - 1) = Set.difference allBids disallowed
     | otherwise = allBids
     where allBids = Set.fromList [0..numCards]
-          disallowed = Set.singleton $ numCards - sum (fmap snd bids)
+          disallowed = Set.singleton $ numCards - sum (snd <$> bids)
+
+  -- | What are all the valid cards given previous cards and a hand
+  validCards :: dr
+             -> Trick p
+             -> Hand
+             -> Set PlayingCard
+  validCards rules trickSoFar (Hand hand)
+    | List.null trickSoFar = hand
+    | List.null following  = hand
+    | otherwise            = following
+    where leadSuit  = (toSuit . snd . List.head) trickSoFar
+          following = Set.filter ((==leadSuit) . toSuit) hand
 
 -- | Rikiki-style dealing, for a given number of players
 newtype RikikiDealing = RikikiDealingFor NumPlayers

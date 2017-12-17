@@ -12,7 +12,7 @@ import           Data.Map (Map)
 import           Game.Implement.Card.Standard (PlayingCard(PlayingCard))
 import           Text.Printf (printf)
 
-newtype Hand = Hand (Set PlayingCard)
+newtype Hand = Hand {fromHand :: Set PlayingCard}
     deriving (Eq, Show)
 
 instance Pretty Hand

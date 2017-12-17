@@ -128,6 +128,18 @@ dealingSpec = describe "Dealing" $ do
       let dealer = RikikiDealingFor 3
       validBids dealer 4 [(alice, 0), (bob, 1)] `shouldBe` Set.fromList [0, 1, 2, 4]
 
+    it "validates playable cards correctly" $ do
+        let
+            dealer = RikikiDealingFor 3
+            aliceHand   = handOf [Four ## Spades, Seven ## Diamonds]
+            bobHand     = handOf [Jack ## Diamonds, Three ## Clubs]
+            charlieHand = handOf [Queen ## Hearts, Two ## Hearts]
+            hands = NonEmpty.fromList [(alice, aliceHand), (bob, bobHand), (charlie, charlieHand)]
+            valid = validCards dealer
+        valid [] aliceHand `shouldBe` fromHand aliceHand
+        valid [(alice, Seven ## Diamonds)] bobHand `shouldBe` Set.singleton (Jack ## Diamonds)
+        valid [(alice, Seven ## Diamonds), (bob, Jack ## Diamonds)] charlieHand `shouldBe` fromHand charlieHand
+
 
 biddingSpec :: Spec
 biddingSpec = describe "Dealing and bidding for a round" $
@@ -160,6 +172,7 @@ roundPlayingSpec :: Spec
 roundPlayingSpec = describe "Playing a round" $
     it "gives correct results" $ do
         let dealer = RikikiDealingFor 3
+            gen = mkStdGen 0
             numCards = 2
             cards = NonEmpty.fromList $ take numCards (fullDeck :: [PlayingCard])
             trumps = Nothing
@@ -167,9 +180,9 @@ roundPlayingSpec = describe "Playing a round" $
             hands = NonEmpty.fromList [(alice, handOf [Four ## Spades, Seven ## Diamonds]),
                                        (bob, handOf [Jack ## Diamonds, Three ## Clubs]),
                                        (charlie, handOf [Queen ## Hearts, Four ## Diamonds])]
-        results <- playRound dealer trumps bids hands
+        let results = evalRand (playRound dealer trumps bids hands) gen
         length results `shouldBe` 3
-        results `shouldBe` Map.fromList [(alice, rr 1 2), (bob, rr 2 0), (charlie, rr 0 0)]
+        results `shouldBe` Map.fromList [(alice, rr 1 1), (bob, rr 2 1), (charlie, rr 0 0)]
 
 trickPlayingSpec :: Spec
 trickPlayingSpec = describe "Playing a trick" $
