@@ -136,7 +136,7 @@ playRound :: (DealerRules d, MonadRandom m, Player p)
             -> BidsFor p
             -> NonEmpty (p, Hand)
             -> m (RoundResultsBy p)
-playRound dealerRules trumps bids playerHands = trace ("Playing round of " ++ prettify playerHands) $ fmap Map.fromList results
+playRound dealerRules trumps bids playerHands = fmap Map.fromList results
     where results = playRound' dealerRules trumps bids (NonEmpty.toList playerHands) Map.empty
 
 -- | Internal recursive implementation
@@ -150,7 +150,7 @@ playRound' :: (DealerRules d, MonadRandom m, Player p)
 playRound' dealerRules trumps bids playerHands taken
   | finished playerHands = trace ("Finished round! Tricks taken: " ++ prettify taken) return $ map zipper bids
   | otherwise            = do
-    trace ("Trumps are " ++ prettify trumps ++ ". Hands:" ++ prettify playerHands) return ()
+    trace (printf "%d cards. Trumps are %s. Hands: %s" (Set.size $ fromHand $ snd $ List.head playerHands) (prettify trumps) (prettify playerHands)) return ()
     (trick, newHands) <- playTrick' dealerRules trumps bids playerHands ([], [])
     let winner = trickWinnerFor trumps trick
         -- Rotate players according to winner

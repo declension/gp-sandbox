@@ -5,9 +5,11 @@ import qualified Data.Set as Set
 import qualified Data.Map as Map
 import           Data.Set (Set)
 import           Data.Map (Map)
+import           GHC.Real
 import           Game.Implement.Card.Standard
 import           Data.List (intercalate)
 import           Data.List.NonEmpty
+import Text.Printf (printf)
 
 class Pretty a where
     prettify :: a -> String
@@ -21,6 +23,12 @@ instance (Pretty a) => Pretty [a] where
 
 instance Pretty Int where
     prettify = show
+
+instance Pretty Double where
+    prettify = show
+
+instance (Integral a) => Pretty (Ratio a) where
+    prettify (r :% d) = printf "%0.2f" (fromIntegral r / fromIntegral d :: Double)
 
 instance Pretty Char where
     prettify = show
