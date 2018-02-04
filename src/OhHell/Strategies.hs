@@ -1,6 +1,3 @@
-{-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE StandaloneDeriving #-}
-
 module OhHell.Strategies where
 
 import Prelude ()
@@ -36,27 +33,6 @@ instance Player RandomPlayer where
 
     chooseCard = playRandomCard
 
--- | Allow heterogeneous lists. Ugh.
-data AnyPlayer = forall a. Player a => MkAnyPlayer a
-deriving instance Show AnyPlayer
-
-fromPlayer :: Player a => a -> AnyPlayer
-fromPlayer = MkAnyPlayer
-
-instance Eq AnyPlayer
-    where a == b = getPlayerId a == getPlayerId b
-
-instance Ord AnyPlayer
-    where compare = comparing getPlayerId
-
-instance Pretty AnyPlayer
-    where prettify (MkAnyPlayer p) = prettify p
-
-instance Player AnyPlayer
-    where getPlayerId (MkAnyPlayer p) = getPlayerId p
-          getPlayerName (MkAnyPlayer p) = getPlayerName p
-          chooseBid (MkAnyPlayer p) = chooseBid p
-          chooseCard (MkAnyPlayer p) = chooseCard p
 
 -- | Plays randomly but bids randomly but weighted towards the expected outcome
 newtype LessRandomPlayer = LessRandomPlayer PlayerId deriving (Show, Eq, Ord)
@@ -73,7 +49,7 @@ instance Player LessRandomPlayer where
             expected = fromIntegral cardsThisRound / fromIntegral (numPlayers dealerRules)
             options = Set.toList $ validBids dealerRules cardsThisRound bidsSoFar
             weighted = weightFor <$> options
-            weightFor b = (b, 1 / (1 + diff * diff)) where diff = fromIntegral b - expected
+            weightFor b = (b, 10 / (1 + diff * diff)) where diff = fromIntegral b - expected
         trace ("Weights for " <> prettify player <> ": " <> prettify weighted) $ pure ()
         rnd <- fromList weighted
         return $ fst $ weighted !! rnd

@@ -7,20 +7,19 @@ import OhHell.Rules
 import OhHell.Pretty
 import OhHell.Strategies
 import OhHell.Game (shuffledDeck, runGame)
+import OhHell.Player (Player, AnyPlayer, fromPlayer)
 
 import GP (myFitness, eval)
 import GenProg
 import Control.Monad.Random (mkStdGen, evalRand, getStdGen)
 import Text.Printf (printf)
-
 import qualified Data.List.NonEmpty as NonEmpty
 import Data.List.NonEmpty (NonEmpty)
-
 import Data.List (last)
 import Control.Monad.Writer (WriterT, runWriterT,execWriterT)
 import Game.Implement.Card (fullDeck)
 import Game.Implement.Card.Standard (PlayingCard)
-import OhHell.Player (Player)
+
 
 evolveMain :: IO ()
 evolveMain = do

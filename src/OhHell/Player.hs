@@ -1,3 +1,6 @@
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE StandaloneDeriving #-}
+
 module OhHell.Player where
 
 import Prelude ()
@@ -39,3 +42,24 @@ class (Show p, Eq p, Ord p, Pretty p) => Player p where
 
 
 
+-- | Allow heterogeneous lists. Ugh.
+data AnyPlayer = forall a. Player a => MkAnyPlayer a
+deriving instance Show AnyPlayer
+
+fromPlayer :: Player a => a -> AnyPlayer
+fromPlayer = MkAnyPlayer
+
+instance Eq AnyPlayer
+    where a == b = getPlayerId a == getPlayerId b
+
+instance Ord AnyPlayer
+    where compare = comparing getPlayerId
+
+instance Pretty AnyPlayer
+    where prettify (MkAnyPlayer p) = prettify p
+
+instance Player AnyPlayer
+    where getPlayerId (MkAnyPlayer p) = getPlayerId p
+          getPlayerName (MkAnyPlayer p) = getPlayerName p
+          chooseBid (MkAnyPlayer p) = chooseBid p
+          chooseCard (MkAnyPlayer p) = chooseCard p
