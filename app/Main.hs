@@ -5,7 +5,7 @@ import ClassyPrelude hiding (last, putStrLn)
 
 import OhHell.Rules
 import OhHell.Pretty
-import OhHell.Strategies (RandomPlayer(RandomPlayer))
+import OhHell.Strategies
 import OhHell.Game (shuffledDeck, runGame)
 
 import GP (myFitness, eval)
@@ -20,6 +20,7 @@ import Data.List (last)
 import Control.Monad.Writer (WriterT, runWriterT,execWriterT)
 import Game.Implement.Card (fullDeck)
 import Game.Implement.Card.Standard (PlayingCard)
+import OhHell.Player (Player)
 
 evolveMain :: IO ()
 evolveMain = do
@@ -34,12 +35,12 @@ evolveMain = do
   let prettyExpr = show (unInd result)
   printf "Evaluates to: %s using %s.\n" (maybe "??" show (eval $ unInd result)) prettyExpr
 
-players :: NonEmpty RandomPlayer
+players :: NonEmpty AnyPlayer
 players = NonEmpty.fromList [alice, bob, charlie, dave]
-    where alice   = RandomPlayer "Alice"
-          bob     = RandomPlayer "Bob"
-          charlie = RandomPlayer "Charlie"
-          dave    = RandomPlayer "Dave"
+    where alice   = fromPlayer $ LessRandomPlayer "Alice"
+          bob     = fromPlayer $ RandomPlayer "Bob"
+          charlie = fromPlayer $ LessRandomPlayer "Charlie"
+          dave    = fromPlayer $ RandomPlayer "Dave"
 
 
 main :: IO ()

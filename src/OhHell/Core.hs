@@ -1,8 +1,7 @@
 module OhHell.Core where
 
 import           Prelude ()
-import           ClassyPrelude hiding (intercalate)
-
+import           ClassyPrelude
 import           OhHell.Pretty
 import           Data.List (intercalate)
 import qualified Data.Set as Set
