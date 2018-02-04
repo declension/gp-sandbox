@@ -7,7 +7,7 @@ import OhHell.Core
 import OhHell.Pretty
 import OhHell.Rules
 import OhHell.Player
-import OhHell.Strategies (RandomBidder(RandomBidder))
+import OhHell.Strategies (RandomPlayer(RandomPlayer))
 import OhHell.Game (bidOnRound,playGame, runGame,playRound,playTrick,winnerOrderedFor)
 
 import Test.Hspec
@@ -36,9 +36,9 @@ spec = do
   roundPlayingSpec
   integrationSpec
 
-alice = RandomBidder "Alice"
-bob = RandomBidder "Bob"
-charlie = RandomBidder "Charlie"
+alice = RandomPlayer "Alice"
+bob = RandomPlayer "Bob"
+charlie = RandomPlayer "Charlie"
 rr = RoundResult
 
 basicSpec :: Spec
@@ -164,7 +164,7 @@ biddingSpec = describe "Dealing and bidding for a round" $
       let playerHands = NonEmpty.fromList
                         [(alice, handOf []),
                          (bob, handOf []),
-                         (charlie, handOf [])] :: NonEmpty (RandomBidder, Hand)
+                         (charlie, handOf [])] :: NonEmpty (RandomPlayer, Hand)
       let g = mkStdGen 0
       let results = evalRand (bidOnRound dealer Nothing playerHands) g
       List.length results `shouldBe` 3

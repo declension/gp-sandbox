@@ -15,11 +15,11 @@ import qualified Data.List as List
 import Data.List ((!!))
 
 
-newtype RandomBidder = RandomBidder PlayerId deriving (Show, Eq, Ord)
+newtype RandomPlayer = RandomPlayer PlayerId deriving (Show, Eq, Ord)
 
-instance Player RandomBidder where
-    getPlayerId (RandomBidder pid) = pid
-    getPlayerName (RandomBidder pid) = pid
+instance Player RandomPlayer where
+    getPlayerId (RandomPlayer pid) = pid
+    getPlayerName (RandomPlayer pid) = pid
 
     chooseBid player dealerRules trumps bidsSoFar (Hand cards) = do
         let cardsThisRound = Set.size cards
@@ -33,5 +33,5 @@ instance Player RandomBidder where
         rnd <- getRandomR (0, List.length options - 1)
         return $ options !! rnd
 
-instance Pretty RandomBidder
-    where prettify (RandomBidder pid) = pid
+instance Pretty RandomPlayer
+    where prettify (RandomPlayer pid) = pid
