@@ -62,10 +62,13 @@ playGame dealerRules scorerRules players startDeck = do
 
     -- Play round
     roundResults <- playRound dealerRules trumps bids playerHands
-    tell $ printf "Round results: %s\n" (prettify results)
+    tell $ printf "Round results: %s\n" (prettify roundResults)
 
     -- Store results
-    put $ roundResults : results
+    let updatedResults = roundResults : results
+    put updatedResults
+
+    tell $ printf "Scores at: %s\n" $ prettify (scoresFor scorerRules updatedResults)
 
     -- Recurse!
     playGame dealerRules scorerRules players deck

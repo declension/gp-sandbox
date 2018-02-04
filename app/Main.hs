@@ -35,10 +35,12 @@ evolveMain = do
   printf "Evaluates to: %s using %s.\n" (maybe "??" show (eval $ unInd result)) prettyExpr
 
 players :: NonEmpty RandomBidder
-players = NonEmpty.fromList [alice, bob, charlie]
+players = NonEmpty.fromList [alice, bob, charlie, dave]
     where alice   = RandomBidder "Alice"
           bob     = RandomBidder "Bob"
           charlie = RandomBidder "Charlie"
+          dave    = RandomBidder "Dave"
+
 
 main :: IO ()
 main = do
