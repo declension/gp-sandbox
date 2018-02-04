@@ -29,7 +29,7 @@ instance Player RandomBidder where
 
     chooseCard player dealerRules trumps bids hand played = do
         let options = Set.toList $ validCards dealerRules played hand
-        trace ("Options: " <> prettify options) $ pure ()
+        trace ("Options for " <> prettify player <> ": " <> prettify options) $ pure ()
         rnd <- getRandomR (0, List.length options - 1)
         return $ options !! rnd
 

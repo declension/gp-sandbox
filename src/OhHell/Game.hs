@@ -150,12 +150,28 @@ playRound' dealerRules trumps bids playerHands taken
     trace ("Trumps are " ++ prettify trumps ++ ". Hands:" ++ prettify playerHands) return ()
     (trick, newHands) <- playTrick' dealerRules trumps bids playerHands ([], [])
     let winner = trickWinnerFor trumps trick
-    trace (prettify winner ++ " won") pure ()
-    playRound' dealerRules trumps bids newHands (Map.alter inc winner taken)
+        -- Rotate players according to winner
+        newOrderedHands = winnerOrderedFor winner newHands
+    trace (prettify winner ++ " won. New order: " ++ prettify newOrderedHands) pure ()
+    playRound' dealerRules trumps bids newOrderedHands (Map.alter inc winner taken)
     where inc Nothing  = Just 1
           inc (Just x) = Just (x + 1)
           zipper (p, bid) = (p, RoundResult {handTaken = fromMaybe 0 (Map.lookup p taken), handBid = bid})
 
+
+-- | Rotate list of player hands according to the winner
+winnerOrderedFor :: (Eq p)
+                 => p
+                 -> [(p, a)]
+                 -> [(p, a)]
+winnerOrderedFor winner hands
+  | winner `elem` players = take numPlayers $ dropWhile isNotWinner cycled
+  -- Could error, but purer just to return the original I guess
+  | otherwise = hands
+    where players = fst <$> hands
+          numPlayers = List.length hands
+          isNotWinner = (/= winner) . fst
+          cycled = List.cycle hands
 
 -- | Play a single trick for each of the passed players
 playTrick :: (DealerRules d, MonadRandom m, Player p)

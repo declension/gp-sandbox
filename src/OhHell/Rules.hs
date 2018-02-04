@@ -51,6 +51,7 @@ class DealerRules dr where
           disallowed = Set.singleton $ numCards - sum (snd <$> bids)
 
   -- | What are all the valid cards given previous cards and a hand
+  -- TODO: support no-leading-with-trumps-until-broken
   validCards :: dr
              -> Trick p
              -> Hand

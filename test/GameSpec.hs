@@ -8,7 +8,7 @@ import OhHell.Pretty
 import OhHell.Rules
 import OhHell.Player
 import OhHell.Strategies (RandomBidder(RandomBidder))
-import OhHell.Game (bidOnRound,playGame, runGame,playRound,playTrick)
+import OhHell.Game (bidOnRound,playGame, runGame,playRound,playTrick,winnerOrderedFor)
 
 import Test.Hspec
 import qualified Data.List as List
@@ -27,6 +27,7 @@ spec :: Spec
 spec = do
   basicSpec
   orderingSpec
+  winnerOrderedSpec
   dealingSpec
   scoringSpec
   biddingSpec
@@ -97,6 +98,21 @@ orderingSpec = describe "Ordering" $ do
         winner a b `shouldBe` b
         winner b d `shouldBe` d
         winner b c `shouldBe` b
+
+winnerOrderedSpec :: Spec
+winnerOrderedSpec = describe "Ordering" $ do
+    it "copes with empty lists" $
+        winnerOrderedFor "foo" ([]  :: HandsFor a) `shouldBe` []
+
+    it "copes with non-existent players" $
+        winnerOrderedFor "baz" [("foo", 1)] `shouldBe` [("foo", 1)]
+
+    it "copes with empty lists" $ do
+        winnerOrderedFor "foo" hands `shouldBe` [("foo", 1) , ("bar", 2), ("baz", 3)]
+        winnerOrderedFor "bar" hands `shouldBe` [("bar", 2), ("baz", 3), ("foo", 1)]
+        winnerOrderedFor "baz" hands `shouldBe` [("baz", 3), ("foo", 1), ("bar", 2)]
+        where hands =    [("foo", 1) , ("bar", 2), ("baz", 3)]
+
 
 dealingSpec :: Spec
 dealingSpec = describe "Dealing" $ do
@@ -182,7 +198,7 @@ roundPlayingSpec = describe "Playing a round" $
                                        (charlie, handOf [Queen ## Hearts, Four ## Diamonds])]
         let results = evalRand (playRound dealer trumps bids hands) gen
         length results `shouldBe` 3
-        results `shouldBe` Map.fromList [(alice, rr 1 1), (bob, rr 2 1), (charlie, rr 0 0)]
+        results `shouldBe` Map.fromList [(alice, rr 1 0), (bob, rr 2 2), (charlie, rr 0 0)]
 
 trickPlayingSpec :: Spec
 trickPlayingSpec = describe "Playing a trick" $
