@@ -12,6 +12,7 @@ import OhHell.Rules
 import Control.Monad.Random (MonadRandom)
 import Game.Implement.Card.Standard (Suit,PlayingCard)
 import Data.List.NonEmpty (NonEmpty)
+import Control.Monad.Writer (WriterT)
 
 -- | The player typeclass
 class (Show p, Eq p, Ord p, Pretty p) => Player p where
@@ -24,21 +25,21 @@ class (Show p, Eq p, Ord p, Pretty p) => Player p where
   -- | Select a bid given some input
   chooseBid :: (DealerRules d, MonadRandom m, Player p2)
              => p
-             -> d               -- ^ Rules of the game
-             -> Maybe Suit      -- ^ Trumps if any
-             -> BidsFor p2      -- ^ What has been bid so far
-             -> Hand            -- ^ The hand this round on which to bid
-             -> m Bid           -- ^ Resulting bid
+             -> d                   -- ^ Rules of the game
+             -> Maybe Suit          -- ^ Trumps if any
+             -> BidsFor p2          -- ^ What has been bid so far
+             -> Hand                -- ^ The hand this round on which to bid
+             -> WriterT Log m Bid   -- ^ Resulting bid
 
   -- | Select a card to play given some input
   chooseCard :: (DealerRules d, MonadRandom m, Player p2)
              => p
-             -> d               -- ^ Rules of the game
-             -> Maybe Suit      -- ^ Trumps if any
-             -> BidsFor p2      -- ^ What has been bid
-             -> Hand            -- ^ (What remains of) the player's hand
-             -> Trick p2        -- ^ What has been played so far this trick
-             -> m PlayingCard   -- ^ The chosen card
+             -> d                           -- ^ Rules of the game
+             -> Maybe Suit                  -- ^ Trumps if any
+             -> BidsFor p2                  -- ^ What has been bid
+             -> Hand                        -- ^ (What remains of) the player's hand
+             -> Trick p2                    -- ^ What has been played so far this trick
+             -> WriterT Log m PlayingCard   -- ^ The chosen card
 
 
 

@@ -1,7 +1,7 @@
 module OhHell.Game where
 
 import           Prelude ()
-import           ClassyPrelude hiding ((<|))
+import           ClassyPrelude hiding ((<|), trace)
 
 import           OhHell.Core
 import           OhHell.Pretty
@@ -112,7 +112,7 @@ bidOnRound :: (DealerRules d, MonadRandom m, Player p)
            => d
            -> Maybe Suit
            -> NonEmpty (p, Hand)
-           -> m (BidsFor p)
+           -> WriterT Log m (BidsFor p)
 bidOnRound dr tr phs = bidOnRound' dr tr (NonEmpty.toList phs) []
 
 -- | Internal recursive version
@@ -121,7 +121,7 @@ bidOnRound' :: (DealerRules d, MonadRandom m, Player p)
             -> Maybe Suit
             -> HandsFor p
             -> BidsFor p
-            -> m (BidsFor p)
+            -> WriterT Log m (BidsFor p)
 bidOnRound' _ _ [] bidsSoFar = return bidsSoFar
 bidOnRound' dealerRules trumps playerHands bidsSoFar = do
     let (p, Hand hand) : ps = playerHands
@@ -135,7 +135,7 @@ playRound :: (DealerRules d, MonadRandom m, Player p)
             -> Maybe Suit
             -> BidsFor p
             -> NonEmpty (p, Hand)
-            -> m (RoundResultsBy p)
+            -> WriterT Log m (RoundResultsBy p)
 playRound dealerRules trumps bids playerHands = fmap Map.fromList results
     where results = playRound' dealerRules trumps bids (NonEmpty.toList playerHands) Map.empty
 
@@ -146,16 +146,18 @@ playRound' :: (DealerRules d, MonadRandom m, Player p)
            -> BidsFor p
            -> HandsFor p
            -> TakenBy p
-           -> m (RoundResultsFor p)
+           -> WriterT Log m (RoundResultsFor p)
 playRound' dealerRules trumps bids playerHands taken
-  | finished playerHands = trace ("Finished round! Tricks taken: " ++ prettify taken) return $ map zipper bids
+  | finished playerHands = do
+     tell $ "Finished round! Tricks taken: \n" <> prettify taken
+     return $ map zipper bids
   | otherwise            = do
-    trace (printf "%d cards. Trumps are %s. Hands: %s" (Set.size $ fromHand $ snd $ List.head playerHands) (prettify trumps) (prettify playerHands)) return ()
+    tell $ printf "%d cards. Trumps are %s. Hands: %s\n" (Set.size $ fromHand $ snd $ List.head playerHands) (prettify trumps) (prettify playerHands)
     (trick, newHands) <- playTrick' dealerRules trumps bids playerHands ([], [])
     let winner = trickWinnerFor trumps trick
         -- Rotate players according to winner
         newOrderedHands = winnerOrderedFor winner newHands
-    trace (prettify winner ++ " won. New order: " ++ prettify newOrderedHands) pure ()
+    tell $ printf "%v won!\n" (prettify winner)
     playRound' dealerRules trumps bids newOrderedHands (Map.alter inc winner taken)
     where inc Nothing  = Just 1
           inc (Just x) = Just (x + 1)
@@ -182,7 +184,7 @@ playTrick :: (DealerRules d, MonadRandom m, Player p)
             -> Maybe Suit
             -> BidsFor p
             -> NonEmpty (p, Hand)
-            -> m (Trick p, HandsFor p)
+            -> WriterT Log m (Trick p, HandsFor p)
 playTrick dealerRules trumps bids playerHands
     = playTrick' dealerRules trumps bids (NonEmpty.toList playerHands) ([], [])
 
@@ -195,14 +197,14 @@ playTrick' :: (DealerRules d, MonadRandom m, Player p)
             -> BidsFor p
             -> HandsFor p
             -> (Trick p, HandsFor p)
-            -> m (Trick p, HandsFor p)
+            -> WriterT Log m (Trick p, HandsFor p)
 playTrick' dealerRules trumps bids playerHands (cardsSoFar, handsSoFar)
   | finished playerHands = return (cardsSoFar, handsSoFar)
   | otherwise            = do
     let (p, Hand hand) : phs = playerHands
         cardsThisRound = Set.size hand
     chosenCard <- chooseCard p dealerRules trumps bids (Hand hand) cardsSoFar
-    trace (prettify p ++ " played " ++ prettify chosenCard) pure ()
+    tell $ printf "%s played %s\n" (prettify p) (prettify chosenCard)
     let newCardsSoFar = cardsSoFar ++ [(p, chosenCard)]
         newHandsSoFar = handsSoFar ++ [(p, Hand newHand)]
         newHand = Set.delete chosenCard hand

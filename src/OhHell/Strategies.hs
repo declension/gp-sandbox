@@ -1,7 +1,7 @@
 module OhHell.Strategies where
 
 import Prelude ()
-import ClassyPrelude hiding (fromList)
+import ClassyPrelude hiding (fromList, trace)
 
 import OhHell.Core
 import OhHell.Pretty
@@ -14,6 +14,8 @@ import qualified Data.Set as Set
 import qualified Data.List as List
 import Data.List ((!!))
 import Game.Implement.Card.Standard (PlayingCard,Suit)
+import Control.Monad.Writer (WriterT, tell)
+import Text.Printf (printf)
 
 -- | Bids and plays totally randomly, and is thus next to useless
 newtype RandomPlayer = RandomPlayer PlayerId deriving (Show, Eq, Ord)
@@ -50,7 +52,7 @@ instance Player LessRandomPlayer where
             options = Set.toList $ validBids dealerRules cardsThisRound bidsSoFar
             weighted = weightFor <$> options
             weightFor b = (b, 10 / (1 + diff * diff)) where diff = fromIntegral b - expected
-        trace ("Weights for " <> prettify player <> ": " <> prettify weighted) $ pure ()
+        tell $ printf "Weights for %s: %s\n" (prettify player) (prettify weighted)
         rnd <- fromList weighted
         return $ fst $ weighted !! rnd
 
@@ -60,14 +62,14 @@ instance Player LessRandomPlayer where
 -- | Plays a card utterly randomly
 playRandomCard :: (DealerRules d, MonadRandom m, Pretty p, Player p2)
          => p
-         -> d               -- ^ Rules of the game
-         -> Maybe Suit      -- ^ Trumps if any
-         -> BidsFor p2      -- ^ What has been bid
-         -> Hand            -- ^ (What remains of) the player's hand
-         -> Trick p2        -- ^ What has been played so far this trick
-         -> m PlayingCard   -- ^ The chosen card
+         -> d                           -- ^ Rules of the game
+         -> Maybe Suit                  -- ^ Trumps if any
+         -> BidsFor p2                  -- ^ What has been bid
+         -> Hand                        -- ^ (What remains of) the player's hand
+         -> Trick p2                    -- ^ What has been played so far this trick
+         -> WriterT Log m PlayingCard   -- ^ The chosen card
 playRandomCard player dealerRules trumps bids hand played = do
         let options = Set.toList $ validCards dealerRules played hand
-        trace ("Options for " <> prettify player <> ": " <> prettify options) $ pure ()
+        tell $ printf "Options for %s: %s. " (prettify player) (prettify options)
         rnd <- getRandomR (0, List.length options - 1)
         return $ options !! rnd

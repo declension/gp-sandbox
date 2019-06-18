@@ -16,7 +16,6 @@ import Text.Printf (printf)
 import qualified Data.List.NonEmpty as NonEmpty
 import Data.List.NonEmpty (NonEmpty)
 import Data.List (last)
-import Control.Monad.Writer (WriterT, runWriterT,execWriterT)
 import Game.Implement.Card (fullDeck)
 import Game.Implement.Card.Standard (PlayingCard)
 
@@ -50,4 +49,4 @@ main = do
   deck <- shuffledDeck
   (log, finalResults) <- runGame dealingRules scoringRules players deck
   putStrLn log
-  putStrLn $ "Scores are:" ++ prettify (scoresFor scoringRules finalResults)
+  putStrLn $ "Final scores are: " ++ prettify (scoresFor scoringRules finalResults)

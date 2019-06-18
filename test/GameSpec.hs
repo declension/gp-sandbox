@@ -19,8 +19,9 @@ import qualified Data.Map as Map
 import Control.Monad.State (execState,runStateT)
 import Control.Monad.Random (mkStdGen,evalRandT,evalRand)
 import Game.Implement.Card (fullDeck)
-import Control.Monad.Writer (execWriterT)
+import Control.Monad.Writer (execWriterT, runWriterT)
 import Game.Implement.Card.Standard
+import Control.Monad.Writer.Strict (runWriter)
 
 
 spec :: Spec
@@ -166,7 +167,7 @@ biddingSpec = describe "Dealing and bidding for a round" $
                          (bob, handOf []),
                          (charlie, handOf [])] :: NonEmpty (RandomPlayer, Hand)
       let g = mkStdGen 0
-      let results = evalRand (bidOnRound dealer Nothing playerHands) g
+      let (results, _) = evalRand (runWriterT $ bidOnRound dealer Nothing playerHands) g
       List.length results `shouldBe` 3
 
 
@@ -178,7 +179,7 @@ strategySpec = describe "RandomStrategy" $
       let numCards = 4
       let cards = Set.fromList $ take numCards fullDeck
       let trumps = Nothing
-      bid <- chooseBid player dealer trumps [(bob, 2), (charlie, 1)] (Hand cards)
+      (bid, _) <- runWriterT $ chooseBid player dealer trumps [(bob, 2), (charlie, 1)] (Hand cards)
       bid `shouldSatisfy` (<= numCards)
       bid `shouldSatisfy` (>= 0)
       bid `shouldSatisfy` (/= 1)
@@ -196,7 +197,7 @@ roundPlayingSpec = describe "Playing a round" $
             hands = NonEmpty.fromList [(alice, handOf [Four ## Spades, Seven ## Diamonds]),
                                        (bob, handOf [Jack ## Diamonds, Three ## Clubs]),
                                        (charlie, handOf [Queen ## Hearts, Four ## Diamonds])]
-        let results = evalRand (playRound dealer trumps bids hands) gen
+        let (results, log) = evalRand (runWriterT $ playRound dealer trumps bids hands) gen
         length results `shouldBe` 3
         results `shouldBe` Map.fromList [(alice, rr 1 0), (bob, rr 2 2), (charlie, rr 0 0)]
 
@@ -211,7 +212,7 @@ trickPlayingSpec = describe "Playing a trick" $
             hands = NonEmpty.fromList [(alice, handOf [Four ## Spades]),
                                        (bob, handOf [Jack ## Diamonds]),
                                        (charlie, handOf [Queen ## Hearts])]
-        (cards, hands) <- playTrick dealer trumps bids hands
+        ((cards, hands), _) <- runWriterT $ playTrick dealer trumps bids hands
         length cards `shouldBe` 3
         cards `shouldBe` [(alice, Four ## Spades), (bob, Jack ## Diamonds), (charlie, Queen ## Hearts)]
         -- Check hands seem OK too
