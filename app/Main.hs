@@ -21,17 +21,18 @@ import Game.Implement.Card (fullDeck)
 import Game.Implement.Card.Standard (PlayingCard)
 
 
+-- | Evolve a test function
 evolveMain :: IO ()
 evolveMain = do
-  let target = 12345
+  let target = 12345 :: Int
+      params = defaultEvolParams {fitness = myFitness target}
   printf "Evolving expressions that result in something near %d...\n" target
-  let params = defaultEvolParams {fitness = myFitness target}
   rng <- getStdGen
-  let trace = evalRand (evolveTrace params {elitists = 1, mProb=0.1, miProb = 0.2}) rng
-  let meanwhile = map (sFitness . best . pop) trace
+  let something = evalRand (evolveTrace params {elitists = 1, mProb=0.1, miProb = 0.2}) rng
+      meanwhile = map (sFitness . best . pop) something
+      result = cachedBest $ last something
+      prettyExpr = show (unInd result)
   printf "Progress was %s\n" $ intercalate ", " $ map show meanwhile
-  let result = cachedBest $ last trace
-  let prettyExpr = show (unInd result)
   printf "Evaluates to: %s using %s.\n" (maybe "??" show (eval $ unInd result)) prettyExpr
 
 players :: NonEmpty AnyPlayer
